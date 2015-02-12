@@ -3,9 +3,7 @@ var Hapi = require('hapi'),
     Request = require('request'),
     qs = require('querystring'),
 
-    QuickBooks = require('node-quickbooks'),
-
-    port = 8000;
+    QuickBooks = require('node-quickbooks');
 
 var server = new Hapi.Server({
     connections: {
@@ -19,8 +17,12 @@ var server = new Hapi.Server({
 
 var consumerKey = process.env.CONSUMER_KEY,
     consumerSecret = process.env.CONSUMER_SECRET;
+    
+var ip = process.env.IP,
+    port = process.env.PORT;
 
 server.connection({
+    address: ip,
     port: port
 });
 
@@ -79,7 +81,7 @@ server.route({
         var postBody = {
             url: QuickBooks.REQUEST_TOKEN_URL,
             oauth: {
-                callback: 'http://localhost:' + port + '/oauth/callback',
+                callback: 'http://' + ip + ':' + port + '/oauth/callback',
                 consumer_key: consumerKey,
                 consumer_secret: consumerSecret
             }
