@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "bell": "git://github.com/cdock1029/bell.git",
     "dynamodb-doc": "git://github.com/awslabs/dynamodb-document-js-sdk.git",
     "ejs": "^2.2.4",
     "good": "^5.1.1",

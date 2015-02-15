@@ -1,4 +1,6 @@
 var Hapi = require('hapi'),
+    AuthCookie = require('hapi-auth-cookie'),
+    Bell = require('bell'),
     Path = require('path'),
     Request = require('request'),
     Qs = require('qs'),
@@ -7,15 +9,21 @@ var Hapi = require('hapi'),
     DOC = require("dynamodb-doc"),
 
     QuickBooks = require('node-quickbooks');
-
+    
+var consumerKey = process.env.CONSUMER_KEY,
+    consumerSecret = process.env.CONSUMER_SECRET;
+    
+var IP, PORT, C9_HOSTNAME, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET;
+    PORT = process.env.PORT,
+    IP = process.env.IP,
+    C9_HOSTNAME = process.env.C9_HOSTNAME,
+    FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID, 
+    FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+    
 var testUser = process.env.QBO_USER; 
 var users = {};
 
-users[testUser] = {
-    id: testUser,
-    password: process.env.QBO_PW,
-    name: 'Bill Brasky'
-};
+users[testUser] = { id: testUser, password: process.env.QBO_PW, name: 'Bill Brasky' };
 
 AWS.config.update({region: 'us-east-1'});
 var docClient = new DOC.DynamoDB();
@@ -33,110 +41,77 @@ var server = new Hapi.Server();//{
     */
 //});
 
+server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
-var consumerKey = process.env.CONSUMER_KEY,
-    consumerSecret = process.env.CONSUMER_SECRET;
-    
-var {IP, PORT, C9_HOSTNAME}  = process.env;
-
-server.connection({
-    host: C9_HOSTNAME,
-    address: IP,
-    port: PORT
-});
-
-var home = (request, reply) => {
-
-    reply('<html><head><title>Login page</title></head><body><h3>Welcome '
-      + request.auth.credentials.name
-      + '!</h3><br/><form method="get" action="/logout">'
-      + '<input type="submit" value="Logout">'
-      + '</form></body></html>');
-};
-
-var login = (request, reply) => {
-
-    if (request.auth.isAuthenticated) {
-        return reply.redirect('/');
-    }
-
-    var message = '';
-    var account = null;
-
-    if (request.method === 'post') {
-
-        if (!request.payload.username ||
-            !request.payload.password) {
-
-            message = 'Missing username or password';
-        }
-        else {
-            account = users[request.payload.username];
-            if (!account ||
-                account.password !== request.payload.password) {
-
-                message = 'Invalid username or password';
-            }
-        }
-    }
-
-    if (request.method === 'get' ||
-        message) {
-
-        return reply('<html><head><title>Login page</title></head><body>'
-            + (message ? '<h3>' + message + '</h3><br/>' : '')
-            + '<form method="post" action="/login">'
-            + 'Username: <input type="text" name="username"><br>'
-            + 'Password: <input type="password" name="password"><br/>'
-            + '<input type="submit" value="Login"></form></body></html>');
-    }
-
-    request.auth.session.set(account);
-    return reply.redirect('/');
-};
-
-var logout = function (request, reply) {
-
-    request.auth.session.clear();
-    return reply.redirect('/');
-};
-
-
-server.register(require('hapi-auth-cookie'), function (err) {
+server.register([Bell, AuthCookie], (err) => {
     if (err) {
-        console.err(err);
-    } else {
-        server.auth.strategy('session', 'cookie', {
-            password: 'secret',
-            cookie: 'sid-example',
-            redirectTo: '/login',
-            isSecure: true
-        });
-    }
+        console.error(err);
+        return process.exit(1);
+    } 
+    
+    server.auth.strategy('waldon-cookie', 'cookie', {
+        password: 'cookie-encryption-password',
+        cookie: 'waldon-auth',
+        isSecure: true
+    });
+    
+    server.auth.strategy('facebook', 'bell', {
+        forceHttps: true,
+        provider: 'facebook',
+        password: 'facebook-encryption-password',
+        clientId: FACEBOOK_APP_ID,
+        clientSecret: FACEBOOK_APP_SECRET,
+        isSecure: true,
+        providerParams: {
+            display: 'popup'
+        }
+    });
+    
+    server.auth.default('waldon-cookie');
 });
+
+
+
 
 server.route([
    {
         method: 'GET',
         path: '/',
         config: {
-            handler: home,
-            auth: 'session'
+            auth: {
+                mode: 'optional'   
+            },
+            handler: (request, reply) => {
+                if (request.auth.isAuthenticated) {
+                    reply('Welcome back ' + request.auth.credentials.profile.displayName);   
+                } else {
+                    reply('<h4>Hello stranger!</h4><a href="login">Login</a>');
+                } 
+            }
         }
     },
     {
         method: ['GET', 'POST'],
         path: '/login',
         config: {
-            handler: login,
-            auth: {
-                mode: 'try',
-                strategy: 'session'
-            },
-            plugins: {
-                'hapi-auth-cookie': {
-                    redirectTo: false
+            auth: 'facebook',
+            handler: (request, reply) => {
+                if (request.auth.isAuthenticated) {
+                    request.auth.session.set(request.auth.credentials);
+                    
+                    reply('<pre>' + JSON.stringify(request.auth.credentials, null, 4) + '</pre>');
+                } else {
+                    reply('Not logged in.').code(401);
                 }
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/account',
+        config: {
+            handler: (request, reply) => {
+                reply(request.auth.credentials.profile); 
             }
         }
     },
@@ -144,8 +119,11 @@ server.route([
         method: 'GET',
         path: '/logout',
         config: {
-            handler: logout,
-            auth: 'session'
+            auth: false,
+            handler: (request, reply) => {
+                request.auth.session.clear();
+                reply.redirect('/');
+            }
         }
     }, 
     /*{
@@ -176,8 +154,7 @@ server.route([
             appCenter: QuickBooks.APP_CENTER_BASE
         };
         reply.view('intuit.ejs', ctx);
-    },
-    auth: 'session'
+    }
     }
 },{
     method: 'GET',
@@ -199,8 +176,7 @@ server.route([
             request.session.set('oauth_token_secret', requestToken.oauth_token_secret);
             reply.redirect(QuickBooks.APP_CENTER_URL + requestToken.oauth_token);
         });
-    },
-    auth: 'session'}
+    }}
 },{
     method: 'GET',
     path: '/oauth/callback',
@@ -244,16 +220,15 @@ server.route([
                 reply(companyInfo);
             });*/
         });
-    },
-    auth: 'session'}
+    }}
 },{
     method: 'GET',
     path: '/close',
     config: {
     handler: (request, reply) => {
         reply.view('close.html');      
-    },
-    auth: 'session'}
+    }
+    }
     
 }]);
 
