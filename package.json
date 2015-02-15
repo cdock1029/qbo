@@ -1,19 +1,25 @@
 {
   "dependencies": {
+    "dynamodb-doc": "git://github.com/awslabs/dynamodb-document-js-sdk.git",
     "ejs": "^2.2.4",
+    "good": "^5.1.1",
+    "good-console": "^4.1.0",
     "handlebars": "^2.0.0",
     "hapi": "^8.1.0",
+    "hapi-auth-cookie": "^2.0.0",
     "node-quickbooks": "^1.0.14",
     "oauth-1.0a": "^0.1.1",
-    "querystring": "^0.2.0",
+    "qs": "^2.3.3",
     "react": "^0.12.2",
     "react-tools": "^0.12.2",
     "request": "^2.53.0",
     "underscore": "^1.7.0",
+    "wreck": "^5.1.0",
     "yar": "^3.0.3"
   },
   "main": "src/main.js",
   "scripts": {
+    "build-server": "6to5 server.js > server_build.js",
     "start": "watchify src/main.js -o src/bundle.js -v -d"
   },
   "browserify": {

@@ -5,16 +5,24 @@
 
     <script type="text/javascript" src="<%= appCenter %>/Content/IA/intuit.ipp.anywhere-1.3.1.js"></script>
     <script>
-        intuit.ipp.anywhere.setup({
-            grantUrl: 'http://localhost:' + <%= port %> + '/oauth/requestToken',
-            datasources: {
-                quickbooks : true,  // set to false if NOT using Quickbooks API
-                payments : false// set to true if using Payments API
-            }
-        });
+        console.log(typeof user);
+        if (typeof user === 'undefined') {
+            intuit.ipp.anywhere.setup({
+                grantUrl: '<%= grantUrl %>',
+                datasources: {
+                    quickbooks : true,  // set to false if NOT using Quickbooks API
+                    payments : false// set to true if using Payments API
+                }
+            });
+        } else {
+            alert('User session active!');
+            USER = user;
+        }
     </script>
 </head>
 <body>
-    <ipp:connectToIntuit></ipp:connectToIntuit>
+    <% if (typeof user === 'undefined') { %>
+        <ipp:connectToIntuit></ipp:connectToIntuit>
+    <% } %> 
 </body>
 </html>
