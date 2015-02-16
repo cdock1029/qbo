@@ -1,9 +1,12 @@
 var Hapi = require('hapi'),
     AuthCookie = require('hapi-auth-cookie'),
+    Yar = require('yar'),
     Bell = require('bell'),
     Path = require('path'),
     Request = require('request'),
     Qs = require('qs'),
+    
+    Handlebars = require('handlebars'),
     
     AWS = require('aws-sdk'),
     DOC = require("dynamodb-doc"),
@@ -20,13 +23,19 @@ var IP, PORT, C9_HOSTNAME, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET;
     FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID, 
     FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
     
+var AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID,
+    ROLE_ARN = 'arn:aws:iam::448236577045:role/Cognito_QBOAuth_DefaultRole',
+    POOL_ID = 'us-east-1:f01f51d9-67be-4ada-97ca-2ac0aa5b03e7',
+    DATA_SET_NAME = 'QBO',
+    COGNITO_ID_KEY = 'cognitoIdentityId',
+    TABLE_NAME = 'Users';
+    
 var testUser = process.env.QBO_USER; 
 var users = {};
 
 users[testUser] = { id: testUser, password: process.env.QBO_PW, name: 'Bill Brasky' };
 
 AWS.config.update({region: 'us-east-1'});
-var docClient = new DOC.DynamoDB();
 
 var server = new Hapi.Server();//{
     /*
@@ -52,7 +61,8 @@ server.register([Bell, AuthCookie], (err) => {
     server.auth.strategy('waldon-cookie', 'cookie', {
         password: 'cookie-encryption-password',
         cookie: 'waldon-auth',
-        isSecure: true
+        isSecure: true,
+        clearInvalid: true
     });
     
     server.auth.strategy('facebook', 'bell', {
@@ -63,14 +73,27 @@ server.register([Bell, AuthCookie], (err) => {
         clientSecret: FACEBOOK_APP_SECRET,
         isSecure: true,
         providerParams: {
-            display: 'popup'
+            display: 'page'
         }
     });
     
     server.auth.default('waldon-cookie');
 });
 
-
+server.register({
+    register: Yar,
+    options: {
+        cookieOptions: {
+            password: '0yar-!yarn-zgar^-garzP'
+        }        
+    }},
+    (err) => {
+        if (err) {
+            console.error(err);
+            return process.exit(1);
+        } 
+    }
+);
 
 
 server.route([
@@ -82,36 +105,76 @@ server.route([
                 mode: 'optional'   
             },
             handler: (request, reply) => {
-                if (request.auth.isAuthenticated) {
-                    reply('Welcome back ' + request.auth.credentials.profile.displayName);   
+                var ctx = {};
+                var cognitoIdentityId = request.session.get(COGNITO_ID_KEY);
+                if (request.auth.isAuthenticated && cognitoIdentityId) {
+                    var cognitoSyncClient = new AWS.CognitoSync(); 
+                    var recordsParams = {
+                        DatasetName: DATA_SET_NAME,
+                        IdentityId: cognitoIdentityId,
+                        IdentityPoolId: POOL_ID
+                    };
+                    cognitoSyncClient.listRecords(recordsParams, (err, data) => {
+                        if (err) {
+                            console.error(err);
+                            return process.exit(1);
+                        } else {
+                            //hack
+                            for (var record of data.Records) {
+                                switch (record.key) {
+                                    case 'oauth_token':
+                                        
+                                        break;
+                                    case 'oauth_token_secret':
+                                        
+                                        break;
+                                    case 'realm_id': 
+                                        
+                                        break;
+                                }
+                            }           
+                        }
+                    });
+                
+                    ctx.profile = request.auth.credentials.profile; 
                 } else {
-                    reply('<h4>Hello stranger!</h4><a href="login">Login</a>');
+                   
                 } 
-            }
-        }
-    },
-    {
-        method: ['GET', 'POST'],
-        path: '/login',
-        config: {
-            auth: 'facebook',
-            handler: (request, reply) => {
-                if (request.auth.isAuthenticated) {
-                    request.auth.session.set(request.auth.credentials);
-                    
-                    reply('<pre>' + JSON.stringify(request.auth.credentials, null, 4) + '</pre>');
-                } else {
-                    reply('Not logged in.').code(401);
-                }
+                reply.view('main.html', ctx);   
             }
         }
     },
     {
         method: 'GET',
-        path: '/account',
+        path: '/login',
         config: {
+            auth: 'facebook',
             handler: (request, reply) => {
-                reply(request.auth.credentials.profile); 
+                if (request.auth.isAuthenticated) {
+                    var logins = {'graph.facebook.com': request.auth.credentials.token};
+                     
+                    // Parameters required for CognitoIdentityCredentials
+                    var params = {
+                        AccountId: AWS_ACCOUNT_ID,
+                        RoleArn: ROLE_ARN,
+                        IdentityPoolId: POOL_ID,
+                        Logins: logins
+                    };
+                    AWS.config.credentials = new AWS.CognitoIdentityCredentials(params);
+                    // Cognito credentials 
+                    AWS.config.credentials.get((err) => {
+                        if (err) {  // an error occurred
+                            return reply(err);
+                        } else {      // successful response
+                            console.info(request.auth.credentials);
+                            request.auth.session.set(request.auth.credentials);
+                            request.session.set(COGNITO_ID_KEY, AWS.config.credentials.identityId);
+                            return reply.redirect('/');
+                        }
+                    });
+                } else {
+                    return reply('Not loggin in.').code(401);
+                }
             }
         }
     },
@@ -145,19 +208,6 @@ server.route([
     }
 },*/{
     method: 'GET',
-    path: '/oauth/start',
-    config: {
-    handler: (request, reply) => {
-        var ctx = {
-            user: request.session.get('user'),
-            grantUrl: 'https://' + C9_HOSTNAME + '/oauth/requestToken',
-            appCenter: QuickBooks.APP_CENTER_BASE
-        };
-        reply.view('intuit.ejs', ctx);
-    }
-    }
-},{
-    method: 'GET',
     path: '/oauth/requestToken',
     config: {
     handler: (request, reply) => {
@@ -182,7 +232,6 @@ server.route([
     path: '/oauth/callback',
     config: {
     handler: (request, reply) => {
-        console.info('In oauth callback');
         var postBody = {
             url: QuickBooks.ACCESS_TOKEN_URL,
             oauth: {
@@ -196,16 +245,59 @@ server.route([
         };
         Request.post(postBody, (e, r, data) => {
             var accessToken = Qs.parse(data);
-            console.info('after post to access token url.\n Access Token: ');
-            console.info(accessToken);
-           
-            request.session.set('user', {
-                oauth_token: accessToken.oauth_token,
-                oauth_token_secret: accessToken.oauth_token_secret,
-                realmId: postBody.oauth.realmId
+            var cognitoIdentityId = request.session.get(COGNITO_ID_KEY);
+            
+            var cognitoSyncClient = new AWS.CognitoSync(); 
+            var recordsParams = {
+                DatasetName: DATA_SET_NAME,
+                IdentityId: cognitoIdentityId,
+                IdentityPoolId: POOL_ID
+            };
+            cognitoSyncClient.listRecords(recordsParams, (err, data) => {
+                if (err) {
+                    console.error(err);
+                    return process.exit(1);
+                } else {
+                    var date = new Date();
+                    var params = {
+                        DatasetName: DATA_SET_NAME, /* required */
+                        IdentityId: cognitoIdentityId, /* required */
+                        IdentityPoolId: POOL_ID, /* required */
+                        SyncSessionToken: data.SyncSessionToken, /* required */
+                        RecordPatches: [{
+                              Key: 'oauth_token', /* required */
+                              Op: 'replace', /* required */
+                              SyncCount: 0, /* required */
+                              DeviceLastModifiedDate: date,
+                              Value: accessToken.oauth_token
+                        },{
+                              Key: 'oauth_token_secret', /* required */
+                              Op: 'replace', /* required */
+                              SyncCount: 0, /* required */
+                              DeviceLastModifiedDate: date,
+                              Value: accessToken.oauth_token_secret
+                        },{
+                              Key: 'realm_id', /* required */
+                              Op: 'replace', /* required */
+                              SyncCount: 0, /* required */
+                              DeviceLastModifiedDate: date,
+                              Value: request.query.realmId
+                        }]
+                    }; 
+                    cognitoSyncClient.updateRecords(params, function(err, data) {
+                        if (err) {
+                            console.error(err); // an error occurred
+                            reply(err)
+                        } else {
+                            console.log('\ncognito records updated ! \n');
+                            console.log(data);           // successful response
+                            reply.redirect('https://' + C9_HOSTNAME + '/close');
+                        }
+                    });
+                    
+                } 
             });
-            console.info('redirect to close here');
-            reply.redirect('https://' + C9_HOSTNAME + '/close');
+            
             
             /*qbo = new QuickBooks(
                 consumerKey,
@@ -235,25 +327,18 @@ server.route([
 server.views({
     engines: {
         ejs: require('ejs'),
-        html: require('handlebars')
+        html: Handlebars,
+        hbs: Handlebars
     },
-    path: 'src/views'
+    path: 'src/views',
+    partialsPath: 'src/views/partials',
+    context: {
+        grantUrl: 'https://' + C9_HOSTNAME + '/oauth/requestToken',
+        appCenter: QuickBooks.APP_CENTER_BASE
+    }
 });
 
-server.register({
-    register: require('yar'),
-    options: {
-        cookieOptions: {
-            password: 'password',
-            isSecure: true
-        }
-    }
-}, (err) => {
-    if (err) {
-        console.error('Failed to load yar plugin.');
-        throw err;
-    }
-});
+
 
 
 

@@ -1,0 +1,24 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ipp="">
+<head>
+  <meta charset="utf-8">
+  <title>Waldon Management</title>
+    {{#unless qbo}} 
+        <script type="text/javascript" src="{{appCenter}}/Content/IA/intuit.ipp.anywhere-1.3.1.js"></script>
+        <script>
+            intuit.ipp.anywhere.setup({
+                grantUrl: '{{grantUrl}}',
+                datasources: {
+                    quickbooks : true,  // set to false if NOT using Quickbooks API
+                    payments : false// set to true if using Payments API
+                }
+            });
+        </script>
+    {{/unless}}
+</head>
+
+<body>
+    {{> header}}
+    
+</body>
+</html>

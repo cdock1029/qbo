@@ -1,0 +1,13 @@
+<header>
+    {{#if profile}}
+        <span><a href="/logout">Logout of {{profile.displayName}}</a></span>
+        {{#unless qbo}} 
+            <ipp:connectToIntuit></ipp:connectToIntuit>
+            <p>QBO button is loaded</p>
+        {{/unless}}
+    {{else}}
+        <a href="/login">Login with Facebook</a> 
+        <p>QBO button not loaded</p>
+    {{/if}}
+</header> 
+    
