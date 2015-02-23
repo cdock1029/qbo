@@ -5,14 +5,21 @@ var React = require('react'),
 
 module.exports = React.createClass({
     getInitialState() {
-        return { customers: Data.getCustomers() };
+        return { customers: [] };
     },
     _sync() {
-        this.setState({ customers: Data.getCustomers() });
+        this.props.QBO.findCustomers((err, list) => {
+            if (err) {
+                console.log('Error in Data getting customers: ' + err.message);
+            } else {
+                this.setState({ customers: list });
+            } 
+        });
+        //Data.getCustomers(this.props.QBO, this.setState);
     },
     render() {
-        var custs = _.map(this.state.customers, (c, id) => {
-            return <tr key={id}><td>{c.name}</td><td>{c.balance}</td></tr>;
+        var custs = _.map(this.state.customers, (c, index) => {
+            return <tr key={c.Id}><td>{c.DisplayName}</td><td>{c.Balance}</td></tr>;
         });
         return(
             <div>

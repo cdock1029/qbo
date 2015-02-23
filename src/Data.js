@@ -1,8 +1,8 @@
 'use strict';
 
 module.exports = {
-    getCustomers() {
-        var data = {
+    getCustomers(QBO, cb) {
+        /*var data = {
             '0': {
                 id: '0',
                 name: 'John Doe',
@@ -18,7 +18,15 @@ module.exports = {
                 name: 'Mad Hatter',
                 balance: '299.95'
             }
-        }
-        return data;
+        }*/
+        QBO.findCustomers((err, list) => {
+            if (err) {
+                console.log('Error in Data getting customers: ' + err.message);
+            } else {
+                cb({ customers: list });
+            }
+        }); 
+        
+        
     }
 };

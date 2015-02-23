@@ -10,7 +10,6 @@ var Hapi = require('hapi'),
     Handlebars = require('handlebars'),
     
     AWS = require('aws-sdk'),
-    DOC = require("dynamodb-doc"),
 
     QuickBooks = require('node-quickbooks');
     
@@ -46,7 +45,16 @@ var AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID,
 //AWS.config.region = AWS_REGION;
 var cognitosync;
 
-var server = new Hapi.Server();
+var server = new Hapi.Server();//{
+/*    connections: {
+        routes: {
+            files: {
+                relativeTo: Path.join(__dirname, './')
+            }
+        }
+    }
+});*/
+
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
 server.register([Bell, AuthCookie], (err) => {
@@ -77,7 +85,6 @@ server.register([Bell, AuthCookie], (err) => {
     
     server.auth.strategy('google', 'bell', {
         forceHttps: true,
-        tokenName: 'id_token',
         provider: 'google',
         password: 'google-encryption-password',
         clientId: GOOGLE_APP_ID,
@@ -90,6 +97,30 @@ server.register([Bell, AuthCookie], (err) => {
 });
 
 server.route([
+    {
+        method: 'GET',
+        path: '/src/{param*}',
+        config: {
+            auth: false,
+            handler: {
+                directory: {
+                    path: 'src'
+                }
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/node_modules/{param*}',
+        config: {
+            auth: false,
+            handler: {
+                directory: {
+                    path: 'node_modules'
+                }
+            }
+        }
+    },
     {
         method: 'GET',
         path: '/',
@@ -169,6 +200,16 @@ server.route([
                     ctx.message = 'Not authenticated';
                     return reply.view('main.html', ctx);   
                 }
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/client',
+        config: {
+            auth: false,
+            handler: (request, reply) => {
+                return reply.view('client.html', {GOOGLE_APP_ID: GOOGLE_APP_ID});
             }
         }
     },
@@ -339,7 +380,8 @@ server.register(
         register: Yar,
         options: {
             cookieOptions: {
-                password: '0yar-!yarn-zgar^-garzP'
+                password: '0yar-!yarn-zgar^-garzP',
+                clearInvalid: true
             }        
         }
     },
