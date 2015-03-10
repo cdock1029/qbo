@@ -1,5 +1,6 @@
-var React = require('react'),
-    Data = require('../Data'),
+//var React = require('react'),
+var Data = require('../Data'),
+    QBO = require('node-quickbooks'),
     _ = require('underscore');
 
 
@@ -8,11 +9,14 @@ module.exports = React.createClass({
         return { customers: [] };
     },
     _sync() {
-        this.props.QBO.findCustomers((err, list) => {
+        var {consumerKey, consumerSecret, token, tokenSecret, realmId} = this.props.qboData;
+        var qbo = new QBO(consumerKey, consumerSecret, token, tokenSecret, realmId, true, true);
+        qbo.findCustomers((err, list) => {
             if (err) {
                 console.log('Error in Data getting customers: ' + err.message);
             } else {
-                this.setState({ customers: list });
+                alert('worked');
+                //this.setState({ customers: list });
             } 
         });
         //Data.getCustomers(this.props.QBO, this.setState);

@@ -1,4 +1,5 @@
 var Hapi = require('hapi'),
+    Hoek = require('hoek'),
     AuthCookie = require('hapi-auth-cookie'),
     Yar = require('yar'),
     Bell = require('bell'),
@@ -6,44 +7,45 @@ var Hapi = require('hapi'),
     Path = require('path'),
     Request = require('request'),
     Qs = require('qs'),
-    
     Handlebars = require('handlebars'),
-    
     AWS = require('aws-sdk'),
-
     QuickBooks = require('node-quickbooks');
     
-var CONSUMER_KEY = process.env.CONSUMER_KEY,
-    CONSUMER_SECRET = process.env.CONSUMER_SECRET;
-    
-//var IP, PORT, C9_HOSTNAME, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET;
+    /* Server params */ 
 var PORT = process.env.PORT,
     IP = process.env.IP,
     C9_HOSTNAME = process.env.C9_HOSTNAME,
+    
+    /* App configuration */
+    //Quickbooks
+    CONSUMER_KEY = process.env.CONSUMER_KEY,
+    CONSUMER_SECRET = process.env.CONSUMER_SECRET,
+    
     FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID, 
     FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET,
-    GOOGLE_APP_ID = process.env.GOOGLE_APP_ID,
-    GOOGLE_APP_SECRET = process.env.GOOGLE_APP_SECRET;
     
-var AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID,
+    GOOGLE_APP_ID = process.env.GOOGLE_APP_ID,
+    GOOGLE_APP_SECRET = process.env.GOOGLE_APP_SECRET,
+   
+    /* AWS config */ 
+    AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID,
     AWS_REGION = process.env.AWS_REGION,
     ROLE_ARN = process.env.IAM_ROLE_ARN,
     POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID,
     DATA_SET_NAME = process.env.COGNITO_DATASET_NAME,
-    
+   
+    /* keys */ 
     COGNITO_IDENTITY_ID = 'COGNITO_IDENTITY_ID',
     COGNITO_SYNC_TOKEN = 'COGNITO_SYNC_TOKEN',
     COGNITO_SYNC_COUNT = 'COGNITO_SYNC_COUNT',
-   
+    
+    QBO_SESSION_KEY = 'qbo',
     QBO_TOKEN = 'oauth_token',
     QBO_TOKEN_SECRET = 'oauth_token_secret',
-    QBO_REALM_ID = 'realm_id',
+    QBO_REALM_ID = 'realm_id';
     
     
-    TABLE_NAME = 'Users';
-    
-//AWS.config.region = AWS_REGION;
-var cognitosync;
+AWS.config.region = AWS_REGION;
 
 var server = new Hapi.Server();//{
 /*    connections: {
@@ -57,30 +59,17 @@ var server = new Hapi.Server();//{
 
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
-server.register([Bell, AuthCookie], (err) => {
+server.register([Bell, AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }, restful: true }}], (err) => {
     if (err) {
         console.error(err);
         return process.exit(1);
     } 
     
-    server.auth.strategy('waldon-user', 'cookie', {
-        password: 'user-cookie-encryption-password',
-        cookie: 'waldon-user',
+    server.auth.strategy('waldon-qbo', 'cookie', {
+        password: 'user-cookie-encryption-password-alskval;sdjvalskdalskdjal;skdjf',
+        cookie: 'waldon-qbo',
         isSecure: true,
         clearInvalid: true
-    });
-    
-    server.auth.strategy('facebook', 'bell', {
-        forceHttps: true,
-        provider: 'facebook',
-        password: 'facebook-encryption-password',
-        clientId: FACEBOOK_APP_ID,
-        clientSecret: FACEBOOK_APP_SECRET,
-        isSecure: true,
-        scope: ['public_profile'],
-        providerParams: {
-            display: 'page'
-        }
     });
     
     server.auth.strategy('google', 'bell', {
@@ -93,7 +82,7 @@ server.register([Bell, AuthCookie], (err) => {
         scope: ['profile']
     });
     
-    server.auth.default('waldon-user');
+    server.auth.default('waldon-qbo');
 });
 
 server.route([
@@ -111,93 +100,104 @@ server.route([
     },
     {
         method: 'GET',
-        path: '/node_modules/{param*}',
-        config: {
-            auth: false,
-            handler: {
-                directory: {
-                    path: 'node_modules'
-                }
-            }
-        }
-    },
-    {
-        method: 'GET',
         path: '/',
         config: {
             auth: {
                 mode: 'optional'   
             },
             handler: (request, reply) => {
+                
                 var message, ctx = {};
                 if (request.auth.isAuthenticated) {
-                    //console.info(request.auth.credentials);
                     ctx.profile = request.auth.credentials.profile;
-                    
+                   
+                    var qboSession = request.session.get(QBO_SESSION_KEY); 
                     //check for QBO session values. Use if here, else lookup in Cognito Dataset
-                    var token = request.session.get(QBO_TOKEN), 
-                        tokenSecret = request.session.get(QBO_TOKEN_SECRET), 
-                        realmId = request.session.get(QBO_REALM_ID); 
                     
-                    if (token && tokenSecret && realmId) {
-                        var qbo = QBO(token, tokenSecret, realmId);
+                    if (qboSession) {
+                        var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
                         qbo.findCompanyInfos((err, list) => {
+                            
                             if (err) {
                                 return reply(err);
                             } else {
-                                ctx.message = '<pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
+                                ctx.message = '<h1>qbo session was set</h1><pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
                                 return reply.view('main.html', ctx);
                             }
+                            
                         });
                     } else {
-                        setAWSCredentials(request.auth.credentials.token); 
+                        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                            AcountId: AWS_ACCOUNT_ID,
+                            IdentityPoolId: POOL_ID,
+                            RoleArn: ROLE_ARN,
+                            Logins: {
+                                'accounts.google.com': request.auth.credentials.idToken
+                            }
+                        });
                         AWS.config.credentials.get(function(err) {
+                    
                             if (err) {
                                 console.error('## credentials.get ##' + err);
-                                return process.exit(1);
+                                return reply(err);
                             } else {
-                                //console.info("Cognito Identity Id: " + AWS.config.credentials.identityId);
-                                cognitosync = new AWS.CognitoSync();
+                                //QBO stuff
+                                var cognitosync = new AWS.CognitoSync();
                                 cognitosync.listRecords({
-                                    DatasetName: DATA_SET_NAME, // required
-                                    IdentityId: AWS.config.credentials.identityId, // required
-                                    IdentityPoolId: POOL_ID // required
+                                    DatasetName: DATA_SET_NAME,
+                                    IdentityId: AWS.config.credentials.identityId,
+                                    IdentityPoolId: POOL_ID
                                 }, function(err, data) {
                                     if (err) {
                                         console.log('## listRecords ##' + err);
                                         return reply(err);
                                     } else {
+                                        var qboCredentials = {};
                                         for (var i = 0; i < data.Count; i++) {
                                             var record = data.Records[i];
                                             switch(record.Key) {
                                                 case QBO_TOKEN:
-                                                    request.session.set(QBO_TOKEN, record.Value);
+                                                    qboCredentials[QBO_TOKEN] = record.Value;
+                                                    //request.session.set(QBO_TOKEN, record.Value);
                                                     break;
                                                 case QBO_TOKEN_SECRET:
-                                                    request.session.set(QBO_TOKEN_SECRET, record.Value);
+                                                    qboCredentials[QBO_TOKEN_SECRET] = record.Value;
+                                                    //request.session.set(QBO_TOKEN_SECRET, record.Value);
                                                     break;
                                                 case QBO_REALM_ID:
-                                                    request.session.set(QBO_REALM_ID, record.Value);
+                                                    qboCredentials[QBO_REALM_ID] = record.Value;
+                                                    //request.session.set(QBO_REALM_ID, record.Value);
                                                     break;
                                             }   
                                         }
-                                        var qbo = QBO(request.session.get(QBO_TOKEN), request.session.get(QBO_TOKEN_SECRET), request.session.get(QBO_REALM_ID));
+                                        if (typeof qboCredentials[QBO_TOKEN] === 'undefined' ||
+                                            typeof qboCredentials[QBO_TOKEN_SECRET] === 'undefined' ||
+                                            typeof qboCredentials[QBO_REALM_ID] === 'undefined') {
+                                            
+                                            //show the button
+                                            return reply.view('main.html', ctx);
+                                        }
+                                        //save values from cognito DB into QBO session
+                                        request.session.set(QBO_SESSION_KEY, qboCredentials);
+                                        var qbo = QBO(qboCredentials[QBO_TOKEN], qboCredentials[QBO_TOKEN_SECRET], qboCredentials[QBO_REALM_ID]);
                                         qbo.findCompanyInfos((err, list) => {
+                                            
                                             if (err) {
-                                                ctx.message = '<pre>' + JSON.stringify(err, null, 4) + '</pre>';
-                                                return reply.view('main.html', ctx);
+                                                return reply(err);
                                             } else {
-                                                ctx.message = '<pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
+                                                ctx.message = '<h1>qbo session wasn\'t set, got values from Cognito</h1><pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
                                                 return reply.view('main.html', ctx);
                                             }
+                                            
                                         });
                                     }
-                                });
+                                });  
                             }
+                            
                         });
                     }
                 } else {
-                    ctx.message = 'Not authenticated';
+                    ctx.message = 'Not logged in';
                     return reply.view('main.html', ctx);   
                 }
             }
@@ -209,11 +209,24 @@ server.route([
         config: {
             auth: false,
             handler: (request, reply) => {
-                return reply.view('client.html', {GOOGLE_APP_ID: GOOGLE_APP_ID});
+                
+                return reply.view('client.html', {GOOGLE_APP_ID: GOOGLE_APP_ID, crumb: request.plugins.crumb});
+                
             }
         }
     },
     {
+        method: 'POST',
+        path: '/client',
+        config: {
+            auth: false,
+            handler: () => {
+                return 
+            }
+        }
+    },
+    {
+        /** Login to 'Google', as well as 'AWS Cognito' */
         method: 'GET',
         path: '/login',
         config: {
@@ -235,8 +248,11 @@ server.route([
         config: {
             auth: false,
             handler: (request, reply) => {
+                
                 request.auth.session.clear();
+                request.session.reset();
                 reply.redirect('/');
+                
             }
         }
     },
@@ -245,6 +261,7 @@ server.route([
         path: '/oauth/requestToken',
         config: {
         handler: (request, reply) => {
+            
             var postBody = {
                 url: QuickBooks.REQUEST_TOKEN_URL,
                 oauth: {
@@ -260,6 +277,7 @@ server.route([
                 request.session.set(QBO_TOKEN_SECRET, requestToken.oauth_token_secret);
                 reply.redirect(QuickBooks.APP_CENTER_URL + requestToken.oauth_token);
             });
+            
         }
     }
     },
@@ -268,6 +286,7 @@ server.route([
     path: '/oauth/callback',
     config: {
     handler: (request, reply) => {
+        
         var postBody = {
             url: QuickBooks.ACCESS_TOKEN_URL,
             oauth: {
@@ -279,75 +298,82 @@ server.route([
                 realmId: request.query.realmId
             }
         };
+        request.session.clear(QBO_TOKEN_SECRET);
         Request.post(postBody, (e, r, data) => {
-            var accessToken = Qs.parse(data);
             
-            setAWSCredentials(request.auth.credentials.token); 
+            var accessToken = Qs.parse(data);
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                AcountId: AWS_ACCOUNT_ID,
+                IdentityPoolId: POOL_ID,
+                RoleArn: ROLE_ARN,
+                Logins: {
+                    'accounts.google.com': request.auth.credentials.idToken
+                }
+            });
             console.log(AWS.config.credentials);
             
             //get id token and temp credentials from AWS
             AWS.config.credentials.get(function(err) {
+                
                 if (err) {
                     console.error('## credentials.get ##' + err);
                     return process.exit(1);
                 } else {
-                    console.info("Cognito Identity Id: " + AWS.config.credentials.identityId);
-                    
-                    cognitosync = new AWS.CognitoSync();
-                    
+                    var cognitosync = new AWS.CognitoSync();
                     cognitosync.listRecords({
                         DatasetName: DATA_SET_NAME, // required
                         IdentityId: AWS.config.credentials.identityId, // required
                         IdentityPoolId: POOL_ID // required
                     }, function(err, data) {
+                        
                         if (err) {
                             console.log('## listRecords ##' + err);
-                            return reply.redirect('/');
+                            return process.exit(1);
                         } else {
                             var syncCount = data.DatasetSyncCount;
-                            
                             var params = {
                                 DatasetName: DATA_SET_NAME,
                                 IdentityId: AWS.config.credentials.identityId,
                                 IdentityPoolId: POOL_ID,
                                 SyncSessionToken: data.SyncSessionToken,
                                 RecordPatches: [{
-                                    Key: 'oauth_token',
+                                    Key: QBO_TOKEN,
                                     Op: 'replace',
                                     SyncCount: syncCount,
                                     Value: accessToken.oauth_token
                                 }, {
-                                    Key: 'oauth_token_secret',
+                                    Key: QBO_TOKEN_SECRET,
                                     Op: 'replace',
                                     SyncCount: syncCount,
                                     Value: accessToken.oauth_token_secret
                                 }, {
-                                    Key: 'realm_id',
+                                    Key: QBO_REALM_ID,
                                     Op: 'replace',
                                     SyncCount: syncCount,
                                     Value: postBody.oauth.realmId
                                 }]
                                 
                             }; 
-                            
                             cognitosync.updateRecords(params, (err, data) => {
+                                
                                 if (err) {
                                     console.error('## updateRecords ## ' + err);
                                     return process.exit(1);
                                 } else {
-                                    
-                                    //set QBO cookies
-                                    request.session.set(QBO_TOKEN, accessToken.oauth_token);
-                                    request.session.set(QBO_TOKEN_SECRET, accessToken.oauth_token_secret);
-                                    request.session.set(QBO_REALM_ID, postBody.oauth.realmId);
+                                    var qboCredentials = {};
+                                    qboCredentials[QBO_TOKEN] = accessToken.oauth_token;
+                                    qboCredentials[QBO_TOKEN_SECRET] = accessToken.oauth_token_secret;
+                                    qboCredentials[QBO_REALM_ID] = postBody.oauth.realmId;
+                                    //set QBO cookie
+                                    request.session.set(QBO_SESSION_KEY, qboCredentials);
                                 }  
                                 return reply.redirect('/');
+                                
                             });
                         }  
                     });
                 }
             }); 
-            
            
         });
     }}
@@ -356,7 +382,9 @@ server.route([
     path: '/close',
     config: {
         handler: (request, reply) => {
+            
             reply.view('close.html');      
+            
         }
     }
     
@@ -396,6 +424,7 @@ server.register(
         }
     }],
     (err) => {
+        
         if (err) {
             console.error(err);
             return process.exit(1);
@@ -404,23 +433,14 @@ server.register(
                 console.info('server started @ ' + IP + ':' + PORT + '\naccess @ ' + C9_HOSTNAME);
             });
         } 
+        
     }
 );
 
 var QBO = (token, tokenSec, realmId) => {
+    
     return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, true/*use sandbox*/, true/*turn debugging on*/); 
+    
 };
 
-var setAWSCredentials = (authToken) => {
-    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-        AcountId: AWS_ACCOUNT_ID,
-        IdentityPoolId: POOL_ID,
-        // optional, only necessary when the identity pool is not configured
-        // to use IAM roles in the Amazon Cognito Console
-        RoleArn: ROLE_ARN,
-        Logins: { // optional tokens, used for authenticated login
-            //'graph.facebook.com': request.auth.credentials.token,
-            'accounts.google.com': authToken
-        }
-    });
-};
+    

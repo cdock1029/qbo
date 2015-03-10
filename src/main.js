@@ -1,6 +1,5 @@
-var React = require('react'),
-    Customers = require('./components/Customers'),
-    QBO = require('node-quickbooks'),
+//var React = require('react'),
+var Customers = require('./components/Customers'),
     AWS = require('aws-sdk');
 
 var COGNITO_PARAMS = {
@@ -67,8 +66,7 @@ window.signinCallback = (authResult) => {
                         console.log(`building QBO == cKey: ${consumerKey}, cSec: ${consumerSecret}, 
                         token: ${token}, tokenSecret: ${tokenSecret}, realmId: ${realmId}`);
                         
-                        var qbo = new QBO(consumerKey, consumerSecret, token, tokenSecret, realmId, true, true);
-                        appFunc(qbo); 
+                        appFunc({ consumerKey: consumerKey, consumerSecret: consumerSecret, token: token, tokenSecret, realmId: realmId }); 
                     }    
                 });
                 
@@ -85,9 +83,9 @@ window.signinCallback = (authResult) => {
     }
 } 
 
-var appFunc = (QBO) => {
+var appFunc = (qboData) => {
     React.render(
-        <Customers QBO={QBO} />,
+        <Customers qboData={qboData} />,
         document.getElementById('content')
     );
 };
