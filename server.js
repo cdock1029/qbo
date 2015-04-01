@@ -33,6 +33,9 @@ var PORT = process.env.PORT,
     ROLE_ARN = process.env.IAM_ROLE_ARN,
     POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID,
     DATA_SET_NAME = process.env.COGNITO_DATASET_NAME,
+    
+    PARSE_APP_ID = process.env.PARSE_APP_ID,
+    PARSE_JS_KEY = process.env.PARSE_JS_KEY,
    
     /* keys */ 
     QBO_SESSION_KEY = 'qbo',
