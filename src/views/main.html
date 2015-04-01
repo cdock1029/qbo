@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <title>Waldon Management</title>
-    {{#unless qbo}} 
+    {{#if qbo}}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react-with-addons.js"></script>
+    {{else}}
         <script type="text/javascript" src="{{appCenter}}/Content/IA/intuit.ipp.anywhere-1.3.1.js"></script>
         <script>
             intuit.ipp.anywhere.setup({
@@ -14,13 +17,15 @@
                 }
             });
         </script>
-    {{/unless}}
+    {{/if}}
 </head>
 <body>
     {{> header}}
-    {{message}}
+    {{{message}}}
     {{#if qbo}}
-         
+        <h2>Viewing data for: {{company}}</h2>
+        <div id="content"></div>
+        <script src="src/bundle.js"></script>
     {{/if}}
 </body>
 </html>

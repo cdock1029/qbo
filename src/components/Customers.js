@@ -1,6 +1,7 @@
 //var React = require('react'),
 var Data = require('../Data'),
-    QBO = require('node-quickbooks'),
+    Customer = require('./Customer'),
+    accounting = require('accounting'),
     _ = require('underscore');
 
 
@@ -9,21 +10,21 @@ module.exports = React.createClass({
         return { customers: [] };
     },
     _sync() {
-        var {consumerKey, consumerSecret, token, tokenSecret, realmId} = this.props.qboData;
-        var qbo = new QBO(consumerKey, consumerSecret, token, tokenSecret, realmId, true, true);
-        qbo.findCustomers((err, list) => {
-            if (err) {
-                console.log('Error in Data getting customers: ' + err.message);
-            } else {
-                alert('worked');
-                //this.setState({ customers: list });
-            } 
-        });
-        //Data.getCustomers(this.props.QBO, this.setState);
+        
+        Data.getCustomers({desc: 'Balance', limit: 10},function(err, data) {
+            
+          if (this.isMounted()) {
+            this.setState({customers: data});  
+          }  
+          
+        }.bind(this));
+        
     },
     render() {
+        
         var custs = _.map(this.state.customers, (c, index) => {
-            return <tr key={c.Id}><td>{c.DisplayName}</td><td>{c.Balance}</td></tr>;
+            var fields = {key: index, name: c.DisplayName, balance: c.Balance};
+            return <Customer data={c} key={index}/>;
         });
         return(
             <div>
@@ -31,8 +32,11 @@ module.exports = React.createClass({
             <table>
                 <thead>
                 <tr>
+                    <th>ID</th>
+                    <th>Company</th>
                     <th>Name</th>
                     <th>Balance</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>

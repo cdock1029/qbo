@@ -1,10 +1,10 @@
 var Hapi = require('hapi'),
     Hoek = require('hoek'),
+    Wreck = require('wreck'),
     AuthCookie = require('hapi-auth-cookie'),
     Yar = require('yar'),
     Bell = require('bell'),
     _ = require('underscore'),
-    Path = require('path'),
     Request = require('request'),
     Qs = require('qs'),
     Handlebars = require('handlebars'),
@@ -35,11 +35,8 @@ var PORT = process.env.PORT,
     DATA_SET_NAME = process.env.COGNITO_DATASET_NAME,
    
     /* keys */ 
-    COGNITO_IDENTITY_ID = 'COGNITO_IDENTITY_ID',
-    COGNITO_SYNC_TOKEN = 'COGNITO_SYNC_TOKEN',
-    COGNITO_SYNC_COUNT = 'COGNITO_SYNC_COUNT',
-    
     QBO_SESSION_KEY = 'qbo',
+    QBO_COMPANY_ID = 'qbo_company_id', 
     QBO_TOKEN = 'oauth_token',
     QBO_TOKEN_SECRET = 'oauth_token_secret',
     QBO_REALM_ID = 'realm_id';
@@ -93,10 +90,20 @@ server.route([
             auth: false,
             handler: {
                 directory: {
-                    path: 'src'
+                    path: (request) => {
+                        return 'src'; 
+                    }
                 }
             }
         }
+    },{
+        method: 'GET',
+        path: '/companies',
+        config: {
+            handler: (request, reply) => {
+                return reply.view('companies.html'); 
+            }
+        } 
     },
     {
         method: 'GET',
@@ -107,7 +114,7 @@ server.route([
             },
             handler: (request, reply) => {
                 
-                var message, ctx = {};
+                var ctx = {};
                 if (request.auth.isAuthenticated) {
                     ctx.profile = request.auth.credentials.profile;
                    
@@ -116,12 +123,14 @@ server.route([
                     
                     if (qboSession) {
                         var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
-                        qbo.findCompanyInfos((err, list) => {
+                        qbo.findCompanyInfos((err, data) => {
                             
                             if (err) {
                                 return reply(err);
                             } else {
-                                ctx.message = '<h1>qbo session was set</h1><pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
+                                ctx.message = '<h3>qbo session was set</h3>';
+                                ctx.company = data.QueryResponse.CompanyInfo[0].CompanyName;
+                                ctx.qbo = true;
                                 return reply.view('main.html', ctx);
                             }
                             
@@ -143,6 +152,7 @@ server.route([
                             } else {
                                 //QBO stuff
                                 var cognitosync = new AWS.CognitoSync();
+                                
                                 cognitosync.listRecords({
                                     DatasetName: DATA_SET_NAME,
                                     IdentityId: AWS.config.credentials.identityId,
@@ -156,6 +166,9 @@ server.route([
                                         for (var i = 0; i < data.Count; i++) {
                                             var record = data.Records[i];
                                             switch(record.Key) {
+                                                case QBO_COMPANY_ID:
+                                                    qboCredentials[QBO_COMPANY_ID] = record.Value; 
+                                                    break;
                                                 case QBO_TOKEN:
                                                     qboCredentials[QBO_TOKEN] = record.Value;
                                                     //request.session.set(QBO_TOKEN, record.Value);
@@ -180,12 +193,14 @@ server.route([
                                         //save values from cognito DB into QBO session
                                         request.session.set(QBO_SESSION_KEY, qboCredentials);
                                         var qbo = QBO(qboCredentials[QBO_TOKEN], qboCredentials[QBO_TOKEN_SECRET], qboCredentials[QBO_REALM_ID]);
-                                        qbo.findCompanyInfos((err, list) => {
+                                        qbo.findCompanyInfos((err, data) => {
                                             
                                             if (err) {
                                                 return reply(err);
                                             } else {
-                                                ctx.message = '<h1>qbo session wasn\'t set, got values from Cognito</h1><pre>' + JSON.stringify(list, null, 4) + '</pre>'; 
+                                                ctx.message = '<h3>qbo session wasn\'t set, got values from Cognito</h3>';
+                                                ctx.company = data.QueryResponse.CompanyInfo[0].CompanyName;
+                                                ctx.qbo = true;
                                                 return reply.view('main.html', ctx);
                                             }
                                             
@@ -205,23 +220,120 @@ server.route([
     },
     {
         method: 'GET',
-        path: '/client',
+        path: '/customers',
         config: {
-            auth: false,
             handler: (request, reply) => {
-                
-                return reply.view('client.html', {GOOGLE_APP_ID: GOOGLE_APP_ID, crumb: request.plugins.crumb});
+                var qboSession = request.session.get(QBO_SESSION_KEY);  
+                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
+                qbo.findCustomers({
+                    asc: request.query.asc,
+                    desc: request.query.desc,
+                    limit: request.query.limit || 5
+                }, (err, customers) => {
+                    if (err) {
+                        return reply(err);
+                    } else {
+                        return reply(customers); 
+                    }     
+                });  
                 
             }
         }
     },
     {
         method: 'POST',
-        path: '/client',
+        path: '/payment',
         config: {
-            auth: false,
-            handler: () => {
-                return 
+            handler: (request, reply) => {
+                var qboSession = request.session.get(QBO_SESSION_KEY);  
+                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
+            }
+        }
+    },
+    {
+        method: ['GET', 'POST'],
+        path: '/update',
+        config: {
+            handler: (request, reply) => {
+                
+                var qboSession = request.session.get(QBO_SESSION_KEY);
+                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
+                qbo.findInvoices([
+                    { field: 'asc', value: 'DocNumber' },
+                    { field: 'limit', value: parseInt(request.query.limit, 10) },
+                    { field: 'offset', value: parseInt(request.query.offset, 10) },
+                    { field: 'SalesTermRef', value: '3', operator: '='}], 
+                    
+                    (err, invoices) => {
+                        
+                    if (err) {
+                        return reply(err);
+                    }
+                    var updates = [];
+                    var updateString = 'Westchester Commons';
+                    //return reply(invoices); 
+                    
+                    /*customers.QueryResponse.Customer.forEach((entity, i, arr) => {
+                        console.info(entity); 
+                        if (entity.CompanyName.indexOf(updateString) === -1) {
+                            entity.CompanyName = updateString + ' ' + entity.CompanyName;
+                            updates.push({
+                                bId: 'bid' + i,
+                                operation: 'update',
+                                Customer: entity
+                            }); 
+                        }
+                    });*/
+                    invoices.QueryResponse.Invoice.forEach((entity, i, arr) => {
+                        console.info(entity); 
+                        //if (! entity.hasOwnProperty('DepartmentRef')) {
+                            /*entity.DepartmentRef = {};
+                            entity.DepartmentRef.name = updateString;
+                            entity.DepartmentRef.value = '1';*/
+                            
+                            entity.SalesTermRef.value = '5';
+                            entity.DueDate = entity.TxnDate;
+                            updates.push({
+                                bId: 'bid' + i,
+                                operation: 'update',
+                                Invoice: entity
+                            }); 
+                        //}
+                        
+                        
+                    }); 
+                    
+                    qbo.batch(updates, (err, response) => {
+                        
+                        if (err) {
+                            return reply(err);
+                        } else {
+                            return reply(response);
+                        }
+                    });
+                });  
+            } 
+        }
+    },
+    {
+        method: 'GET',
+        path: '/invoices',
+        config: {
+            handler: (request, reply) => {
+                var qboSession = request.session.get(QBO_SESSION_KEY);  
+                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
+                qbo.findInvoices({
+                    asc: request.query.asc,
+                    desc: request.query.desc,
+                    limit: request.query.limit || 5
+                }, (err, invoices) => {
+                    if (err) {
+                        return reply(err);
+                    } else {
+                        return reply(invoices); 
+                    }     
+                });  
+                
             }
         }
     },
@@ -233,7 +345,7 @@ server.route([
             auth: 'google',
             handler: (request, reply) => {
                 if (request.auth.isAuthenticated) {
-                    console.info(request.auth.credentials);
+                    //console.info(request.auth.credentials);
                     request.auth.session.set(request.auth.credentials);
                     return reply.redirect('/');
                 } else {
@@ -253,6 +365,36 @@ server.route([
                 request.session.reset();
                 reply.redirect('/');
                 
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/disconnect',
+        config: {
+            handler: (request, reply) => {
+                //TODO call api, then remove from cognito db
+                reply.redirect('/'); 
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/privacy',
+        config: {
+            handler: (request, reply) => {
+                //TODO call api, then remove from cognito db
+                reply.view('privacy.html'); 
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/eula',
+        config: {
+            handler: (request, reply) => {
+                
+                reply.view('eula.html'); 
             }
         }
     },
@@ -367,7 +509,7 @@ server.route([
                                     //set QBO cookie
                                     request.session.set(QBO_SESSION_KEY, qboCredentials);
                                 }  
-                                return reply.redirect('/');
+                                return reply.redirect('/close');
                                 
                             });
                         }  
@@ -430,6 +572,7 @@ server.register(
             return process.exit(1);
         } else {
             server.start(() => {
+                console.info('consumer key: ' + CONSUMER_KEY + ', consumer secret: ' + CONSUMER_SECRET);
                 console.info('server started @ ' + IP + ':' + PORT + '\naccess @ ' + C9_HOSTNAME);
             });
         } 
@@ -439,7 +582,7 @@ server.register(
 
 var QBO = (token, tokenSec, realmId) => {
     
-    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, true/*use sandbox*/, true/*turn debugging on*/); 
+    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, false/*use sandbox*/, true/*turn debugging on*/); 
     
 };
 

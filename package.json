@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "accounting": "^0.4.1",
     "aws-sdk": "^2.1.16",
     "bell": "git://github.com/cdock1029/bell.git",
     "crumb": "^4.0.2",
@@ -20,7 +21,7 @@
   },
   "main": "src/main.js",
   "scripts": {
-    "build-server": "6to5 server.js > server_build.js",
+    "build": "babel server.js > server_build.js",
     "start": "watchify src/main.js -o src/bundle.js -v -d"
   },
   "browserify": {
@@ -34,6 +35,7 @@
     ]
   },
   "devDependencies": {
+    "babel": "^4.7.13",
     "browserify": "^9.0.3",
     "jsx-loader": "*",
     "react-tools": "^0.13.0-rc1",
