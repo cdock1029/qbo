@@ -34,5 +34,20 @@ module.exports = {
         }).done((payment) => {
             cb(null, payment); 
         });  
+    },
+    
+    login(username, password,s,e) {
+        
+        $.ajax('/login', {
+            method: 'POST',
+            data: {username: username, password: password},
+            
+            
+        }).done(function(data, textStatus, jqXHR) {
+            s(data);
+        }).fail(function(jqXHR, textStatus, error) {
+            e({message: error});
+        });
+        
     }
 };

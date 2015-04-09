@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]-->
+<html class="no-js" lang="en" >
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Waldon Management</title>
+        <link rel="stylesheet" href="src/foundation/css/normalize.css" />
+        <link rel="stylesheet" href="src/foundation/css/foundation.css" />
+        <script src="src/foundation/js/vendor/modernizr.js"></script>
+    </head>
+    <body>
+        <section role="main" class="scroll-container"> 
+        <div class="row"> 
+        <div class="panel">
+        {{#if message}}
+        <span>{{message}}</span> 
+        {{/if}}
+        <form method="post" action="/login">
+            <div class="row">
+                <div class="large-12 columns">
+                    <label>Username: 
+                        <input id="username" type="text" name="username"/>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="large-12 columns">
+                    <label>Password:
+                        <input id="password" type="password" name="password"/>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="large-12 columns">
+                    <input type="submit" value="Login"/>
+                </div>
+            </div>
+            <input type="hidden" name="crumb" value="{{crumb}}"/>
+        </form>
+        </div>
+        </div>
+        </section>
+        
+        <script src="src/foundation/js/vendor/jquery.js"></script>
+        <script src="src/foundation/js/foundation.min.js"></script>
+        <script>
+            $(document).foundation();
+        </script>
+    </body> 
+</html>

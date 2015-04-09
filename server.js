@@ -7,8 +7,8 @@ var Hapi = require('hapi'),
     _ = require('underscore'),
     Request = require('request'),
     Qs = require('qs'),
+    Parse = require('parse').Parse, 
     Handlebars = require('handlebars'),
-    AWS = require('aws-sdk'),
     QuickBooks = require('node-quickbooks');
     
     /* Server params */ 
@@ -44,8 +44,7 @@ var PORT = process.env.PORT,
     QBO_TOKEN_SECRET = 'oauth_token_secret',
     QBO_REALM_ID = 'realm_id';
     
-    
-AWS.config.region = AWS_REGION;
+Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
 
 var server = new Hapi.Server();//{
 /*    connections: {
@@ -59,27 +58,17 @@ var server = new Hapi.Server();//{
 
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
-server.register([Bell, AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }, restful: true }}], (err) => {
+server.register([AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}], (err) => {
     if (err) {
         console.error(err);
         return process.exit(1);
     } 
     
     server.auth.strategy('waldon-qbo', 'cookie', {
-        password: 'user-cookie-encryption-password-alskval;sdjvalskdalskdjal;skdjf',
+        password: 'FBeJ2ibHNmG9SWa;alssf202h2JLHlS0FlJS',
         cookie: 'waldon-qbo',
         isSecure: true,
         clearInvalid: true
-    });
-    
-    server.auth.strategy('google', 'bell', {
-        forceHttps: true,
-        provider: 'google',
-        password: 'google-encryption-password',
-        clientId: GOOGLE_APP_ID,
-        clientSecret: GOOGLE_APP_SECRET,
-        isSecure: true,
-        scope: ['profile']
     });
     
     server.auth.default('waldon-qbo');
@@ -116,108 +105,7 @@ server.route([
                 mode: 'optional'   
             },
             handler: (request, reply) => {
-                
-                var ctx = {};
-                if (request.auth.isAuthenticated) {
-                    ctx.profile = request.auth.credentials.profile;
-                   
-                    var qboSession = request.session.get(QBO_SESSION_KEY); 
-                    //check for QBO session values. Use if here, else lookup in Cognito Dataset
-                    
-                    if (qboSession) {
-                        var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
-                        qbo.findCompanyInfos((err, data) => {
-                            
-                            if (err) {
-                                return reply(err);
-                            } else {
-                                ctx.message = '<h3>qbo session was set</h3>';
-                                ctx.company = data.QueryResponse.CompanyInfo[0].CompanyName;
-                                ctx.qbo = true;
-                                return reply.view('main.html', ctx);
-                            }
-                            
-                        });
-                    } else {
-                        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                            AcountId: AWS_ACCOUNT_ID,
-                            IdentityPoolId: POOL_ID,
-                            RoleArn: ROLE_ARN,
-                            Logins: {
-                                'accounts.google.com': request.auth.credentials.idToken
-                            }
-                        });
-                        AWS.config.credentials.get(function(err) {
-                    
-                            if (err) {
-                                console.error('## credentials.get ##' + err);
-                                return reply(err);
-                            } else {
-                                //QBO stuff
-                                var cognitosync = new AWS.CognitoSync();
-                                
-                                cognitosync.listRecords({
-                                    DatasetName: DATA_SET_NAME,
-                                    IdentityId: AWS.config.credentials.identityId,
-                                    IdentityPoolId: POOL_ID
-                                }, function(err, data) {
-                                    if (err) {
-                                        console.log('## listRecords ##' + err);
-                                        return reply(err);
-                                    } else {
-                                        var qboCredentials = {};
-                                        for (var i = 0; i < data.Count; i++) {
-                                            var record = data.Records[i];
-                                            switch(record.Key) {
-                                                case QBO_COMPANY_ID:
-                                                    qboCredentials[QBO_COMPANY_ID] = record.Value; 
-                                                    break;
-                                                case QBO_TOKEN:
-                                                    qboCredentials[QBO_TOKEN] = record.Value;
-                                                    //request.session.set(QBO_TOKEN, record.Value);
-                                                    break;
-                                                case QBO_TOKEN_SECRET:
-                                                    qboCredentials[QBO_TOKEN_SECRET] = record.Value;
-                                                    //request.session.set(QBO_TOKEN_SECRET, record.Value);
-                                                    break;
-                                                case QBO_REALM_ID:
-                                                    qboCredentials[QBO_REALM_ID] = record.Value;
-                                                    //request.session.set(QBO_REALM_ID, record.Value);
-                                                    break;
-                                            }   
-                                        }
-                                        if (typeof qboCredentials[QBO_TOKEN] === 'undefined' ||
-                                            typeof qboCredentials[QBO_TOKEN_SECRET] === 'undefined' ||
-                                            typeof qboCredentials[QBO_REALM_ID] === 'undefined') {
-                                            
-                                            //show the button
-                                            return reply.view('main.html', ctx);
-                                        }
-                                        //save values from cognito DB into QBO session
-                                        request.session.set(QBO_SESSION_KEY, qboCredentials);
-                                        var qbo = QBO(qboCredentials[QBO_TOKEN], qboCredentials[QBO_TOKEN_SECRET], qboCredentials[QBO_REALM_ID]);
-                                        qbo.findCompanyInfos((err, data) => {
-                                            
-                                            if (err) {
-                                                return reply(err);
-                                            } else {
-                                                ctx.message = '<h3>qbo session wasn\'t set, got values from Cognito</h3>';
-                                                ctx.company = data.QueryResponse.CompanyInfo[0].CompanyName;
-                                                ctx.qbo = true;
-                                                return reply.view('main.html', ctx);
-                                            }
-                                            
-                                        });
-                                    }
-                                });  
-                            }
-                            
-                        });
-                    }
-                } else {
-                    ctx.message = 'Not logged in';
-                    return reply.view('main.html', ctx);   
-                }
+                return reply.view('main.html');
             }
         }
     },
@@ -341,19 +229,40 @@ server.route([
         }
     },
     {
-        /** Login to 'Google', as well as 'AWS Cognito' */
-        method: 'GET',
+        method: ['GET', 'POST'],
         path: '/login',
         config: {
-            auth: 'google',
+            auth: { mode: 'try' },
             handler: (request, reply) => {
                 if (request.auth.isAuthenticated) {
-                    //console.info(request.auth.credentials);
-                    request.auth.session.set(request.auth.credentials);
+                    console.info(request.auth);
+                    //request.auth.session.set();
                     return reply.redirect('/');
+                } 
+                
+                if (request.method === 'post') {
+                    var username = request.payload.username, password = request.payload.password;
+                    if (! username || ! password) {
+                        return reply.view('login.html', { message: 'Missing username or password'});
+                    } 
+                    
+                    Parse.User.logIn(username, password).then((user) => {
+                        console.info(user);
+                        var session = getParseSession(user);
+                        request.auth.session.set(session); 
+                        return reply.redirect('/');
+                    }, (err) => {
+                        return handleParseError(err, reply) || reply.view('login.html', { message: err.message });  
+                    });
                 } else {
-                    return reply('Not loggin in.').code(401);
+                    return reply.view('login.html');    
                 }
+                
+            },
+            plugins: {
+                'hapi-auth-cookie': {
+                    redirectTo: false
+                } 
             }
         }
     },
@@ -366,6 +275,7 @@ server.route([
                 
                 request.auth.session.clear();
                 request.session.reset();
+                Parse.User.logOut(); 
                 reply.redirect('/');
                 
             }
@@ -585,8 +495,29 @@ server.register(
 
 var QBO = (token, tokenSec, realmId) => {
     
-    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, false/*use sandbox*/, true/*turn debugging on*/); 
+    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, true/*use sandbox*/, true/*turn debugging on*/); 
     
+};
+
+var getParseSession = (parseUser) => {
+    var obj = {};
+    obj.id = parseUser.id;
+    obj.username = parseUser.username;
+    obj.email = parseUser.email;
+    obj.sessionToken = parseUser._sessionToken;
+    return obj;
+};
+
+var handleParseError = (err, reply) => {
+  if (err.code === Parse.Error.INVALID_SESSION_TOKEN) {
+      Parse.User.logOut();
+      // If web browser, render a log in screen
+      // If Express.js, redirect the user to the log in route   
+        return reply.redirect('/login');
+    // Other Parse API errors that you want to explicitly handle
+  } else {
+      return null;
+  }
 };
 
     
