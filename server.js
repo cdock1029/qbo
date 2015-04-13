@@ -7,7 +7,7 @@ var Hapi = require('hapi'),
     _ = require('underscore'),
     Request = require('request'),
     Qs = require('qs'),
-    Parse = require('parse').Parse, 
+    
     Handlebars = require('handlebars'),
     Boom = require('boom'),
     QuickBooks = require('node-quickbooks');
@@ -45,7 +45,6 @@ var PORT = process.env.PORT,
     QBO_TOKEN_SECRET = 'oauth_token_secret',
     QBO_REALM_ID = 'realm_id';
     
-Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
 
 var server = new Hapi.Server();//{
 /*    connections: {
@@ -71,7 +70,7 @@ var extension = function (request, reply) {
     
     return reply.continue(); 
 };
-server.ext('onRequest', extension);
+//server.ext('onRequest', extension);
 
 
 server.register([AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}], (err) => {
@@ -90,12 +89,34 @@ server.register([AuthCookie, { register: require('crumb'), options: { cookieOpti
     //server.auth.default('user');
 });
 
+var parsePre = function(request, reply) {
+    
+    var Parse = require('parse').Parse;
+    Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
+    
+    return reply(Parse);
+};
+
+var userPre = function(request, reply) {
+    var Parse = request.pre.Parse,
+        token = request.session && request.session.get('token');
+    
+    if (token) {
+        Parse.User.become(token).then(function(user) {
+            return reply(user); 
+        }, function(err) {
+            return reply(err).takeover(); 
+        });
+    } else {
+        reply.redirect('/login').takeover(); 
+    }
+};
 
 var companiesPre = function(request, reply) {
     
     if (request.method === 'get') {
-        //var token = request.auth.credentials;
-        var user = Parse.User.current();
+        var Parse = request.pre.Parse, 
+            user = request.pre.user;
         
         user.get('privateUserData').fetch().then(function(privateUserData) {
             var relation = privateUserData.relation("companies");
@@ -103,10 +124,8 @@ var companiesPre = function(request, reply) {
         }).then(function(companies) {
             return reply(companies);
         }, function(err) {
-            //TODO ?????
-            console.error(err);
-            return reply(err);
-        }); 
+            return reply(err).takeover();
+        });
     } else {
         return reply.continue();
     }
@@ -129,13 +148,18 @@ server.route([
         method: ['GET','POST'],
         path: '/companies',
         config: {
-            pre: [ { method: companiesPre, assign: 'companies' }],
+            pre: [
+                { method: parsePre, assign: 'Parse'}, 
+                { method: userPre, assign: 'user'}, 
+                { method: companiesPre, assign: 'companies' }
+            ],
             handler: (request, reply) => {
                 
                 if (request.method === 'post') {
-                    
-                    var Company = Parse.Object.extend('Company');
-                    var query = new Parse.Query(Company);
+                    var Parse = request.pre.Parse,
+                        Company = Parse.Object.extend('Company'),
+                        query = new Parse.Query(Company);
+                        
                     query.get(request.payload.company, {
                         success: function(company) {
                             var qboObj = {};
@@ -163,6 +187,10 @@ server.route([
         method: 'GET',
         path: '/',
         config: {
+            pre: [
+                {method: parsePre, assign: 'Parse'}, 
+                {method: userPre, assign: 'user'}
+            ],
             handler: (request, reply) => {
                 var ctx = {};
                 var company = request.session.get(QBO_SESSION_KEY); 
@@ -297,19 +325,16 @@ server.route([
         method: ['GET', 'POST'],
         path: '/login',
         config: {
-            auth: false,
+            pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
                 if (request.method === 'post') {
-                    Parse.User.logOut(); 
-                    request.auth.session.clear();
-                    request.session.reset();
                     
                     var username = request.payload.username, password = request.payload.password;
                     if (! username || ! password) {
                         return reply.view('login.html', { message: 'Missing username or password'});
                     } 
-                    
+                    var Parse = request.pre.Parse;
                     Parse.User.logIn(username, password, {
                         success: (user) => {
                             /*
@@ -322,10 +347,11 @@ server.route([
                                 return reply.view('login.html', { message: err.message });    
                             });*/
                            
-                            //request.auth.session.set({parseToken: user.getSessionToken()}); 
+                            request.session.set('token', user.getSessionToken()); 
                             return reply.redirect('/companies');
                         },
                         error: (user, err) => {
+                            //request.session.reset();
                             return reply.view('login.html', { message: err.message });  
                         }
                     });
@@ -345,12 +371,11 @@ server.route([
         method: 'GET',
         path: '/logout',
         config: {
-            auth: false,
+            pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
-                request.auth.session.clear();
+                request.pre.Parse.User.logOut(); 
                 request.session.reset();
-                Parse.User.logOut(); 
                 reply.redirect('/login');
                 
             }
@@ -477,7 +502,7 @@ server.register(
         register: Yar,
         options: {
             cookieOptions: {
-                password: '0yar-!yarn-zgar^-garzP',
+                password: 'OIyfd43346fgxhbokdChcz1sI',
                 clearInvalid: true
             }        
         }
