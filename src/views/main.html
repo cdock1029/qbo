@@ -19,7 +19,11 @@
         </script>
 </head>
 <body>
-    
+        {{#if companyName}}
+            <h4>{{companyName}}</h4> 
+        {{/if}}
+        <a href="/logout">Logout</a>
+        <a href="/companies">Companies</a>
         <div id="content"></div>
         <script src="src/bundle.js"></script>
 </body>

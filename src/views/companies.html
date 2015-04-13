@@ -9,11 +9,12 @@
 <body>
     <h3>Select Company</h3>
     <form method="post">
-        <select name="companySelect">
+        <select name="company">
         {{#each companies}}
-            {{this}}
+            <option value="{{this.id}}">{{this.attributes.name}}</option>
         {{/each}}
         </select>
+        <input type="hidden" name="crumb" value="{{crumb}}"/>
         <input type="submit" value="Submit"/>
     </form>
 </body>

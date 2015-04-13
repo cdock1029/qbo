@@ -1,14 +1,15 @@
 var Hapi = require('hapi'),
-    Hoek = require('hoek'),
-    Wreck = require('wreck'),
+    //Hoek = require('hoek'),
+    //Wreck = require('wreck'),
     AuthCookie = require('hapi-auth-cookie'),
     Yar = require('yar'),
-    Bell = require('bell'),
+    //Bell = require('bell'),
     _ = require('underscore'),
     Request = require('request'),
     Qs = require('qs'),
     Parse = require('parse').Parse, 
     Handlebars = require('handlebars'),
+    Boom = require('boom'),
     QuickBooks = require('node-quickbooks');
     
     /* Server params */ 
@@ -58,28 +59,64 @@ var server = new Hapi.Server();//{
 
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
+
+var extension = function (request, reply) {
+    //var companySession = request.session && request.session.get(QBO_SESSION_KEY),
+    var user = Parse.User.current(),
+        path = request.path;
+    
+    if (! user) {//&& path !== '/login') {
+        request.setUrl('/login');
+    } 
+    
+    return reply.continue(); 
+};
+server.ext('onRequest', extension);
+
+
 server.register([AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}], (err) => {
     if (err) {
         console.error(err);
         return process.exit(1);
     } 
     
-    server.auth.strategy('waldon-qbo', 'cookie', {
-        password: 'FBeJ2ibHNmG9SWa;alssf202h2JLHlS0FlJS',
-        cookie: 'waldon-qbo',
+    server.auth.strategy('user', 'cookie', {
+        password: 'FBeJ2ibHNmG9SaSFWa;alssf2052h2JLHlS0FlJS',
+        cookie: 'user',
         isSecure: true,
         clearInvalid: true
     });
     
-    server.auth.default('waldon-qbo');
+    //server.auth.default('user');
 });
+
+
+var companiesPre = function(request, reply) {
+    
+    if (request.method === 'get') {
+        //var token = request.auth.credentials;
+        var user = Parse.User.current();
+        
+        user.get('privateUserData').fetch().then(function(privateUserData) {
+            var relation = privateUserData.relation("companies");
+            return relation.query().find();
+        }).then(function(companies) {
+            return reply(companies);
+        }, function(err) {
+            //TODO ?????
+            console.error(err);
+            return reply(err);
+        }); 
+    } else {
+        return reply.continue();
+    }
+};
 
 server.route([
     {
         method: 'GET',
         path: '/src/{param*}',
         config: {
-            auth: false,
             handler: {
                 directory: {
                     path: (request) => {
@@ -89,11 +126,36 @@ server.route([
             }
         }
     },{
-        method: 'GET',
+        method: ['GET','POST'],
         path: '/companies',
         config: {
+            pre: [ { method: companiesPre, assign: 'companies' }],
             handler: (request, reply) => {
-                return reply.view('companies.html'); 
+                
+                if (request.method === 'post') {
+                    
+                    var Company = Parse.Object.extend('Company');
+                    var query = new Parse.Query(Company);
+                    query.get(request.payload.company, {
+                        success: function(company) {
+                            var qboObj = {};
+                            qboObj.realmId = company.get('realmId');
+                            qboObj.oauthToken = company.get('oauthToken');
+                            qboObj.oauthTokenSecret = company.get('oauthTokenSecret');
+                            qboObj.name = company.get('name'); 
+                           
+                            request.session.set(QBO_SESSION_KEY, qboObj); 
+                            
+                            return reply.redirect('/');
+                        },
+                        error: function(object, err) {
+                            return reply(err);
+                        }
+                    });
+                    
+                } else {
+                    return reply.view('companies.html', {companies: request.pre.companies}); 
+                }
             }
         } 
     },
@@ -101,11 +163,13 @@ server.route([
         method: 'GET',
         path: '/',
         config: {
-            auth: {
-                mode: 'optional'   
-            },
             handler: (request, reply) => {
-                return reply.view('main.html');
+                var ctx = {};
+                var company = request.session.get(QBO_SESSION_KEY); 
+                if (company) {
+                    ctx.companyName = company.name;    
+                } 
+                return reply.view('main.html', ctx);
             }
         }
     },
@@ -114,7 +178,8 @@ server.route([
         path: '/customers',
         config: {
             handler: (request, reply) => {
-                var qboSession = request.session.get(QBO_SESSION_KEY);  
+                var user = Parse.User.current();
+                
                 var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
                 qbo.findCustomers({
                     asc: request.query.asc,
@@ -232,38 +297,48 @@ server.route([
         method: ['GET', 'POST'],
         path: '/login',
         config: {
-            auth: { mode: 'try' },
+            auth: false,
             handler: (request, reply) => {
-                if (request.auth.isAuthenticated) {
-                    console.info(request.auth);
-                    //request.auth.session.set();
-                    return reply.redirect('/');
-                } 
                 
                 if (request.method === 'post') {
+                    Parse.User.logOut(); 
+                    request.auth.session.clear();
+                    request.session.reset();
+                    
                     var username = request.payload.username, password = request.payload.password;
                     if (! username || ! password) {
                         return reply.view('login.html', { message: 'Missing username or password'});
                     } 
                     
-                    Parse.User.logIn(username, password).then((user) => {
-                        console.info(user);
-                        var session = getParseSession(user);
-                        request.auth.session.set(session); 
-                        return reply.redirect('/');
-                    }, (err) => {
-                        return handleParseError(err, reply) || reply.view('login.html', { message: err.message });  
+                    Parse.User.logIn(username, password, {
+                        success: (user) => {
+                            /*
+                            user.get('privateUserData').fetch().then(function(privateUserData) {
+                                var relation = privateUserData.relation("companies")
+                                return relation.query().find();
+                            }).then(function(companies) {
+                                return reply({user: user, companies: companies});
+                            }, function(err) {
+                                return reply.view('login.html', { message: err.message });    
+                            });*/
+                           
+                            //request.auth.session.set({parseToken: user.getSessionToken()}); 
+                            return reply.redirect('/companies');
+                        },
+                        error: (user, err) => {
+                            return reply.view('login.html', { message: err.message });  
+                        }
                     });
                 } else {
                     return reply.view('login.html');    
                 }
                 
-            },
+            }/*,
             plugins: {
                 'hapi-auth-cookie': {
                     redirectTo: false
                 } 
-            }
+            }*/
         }
     },
     {
@@ -276,7 +351,7 @@ server.route([
                 request.auth.session.clear();
                 request.session.reset();
                 Parse.User.logOut(); 
-                reply.redirect('/');
+                reply.redirect('/login');
                 
             }
         }
@@ -340,6 +415,7 @@ server.route([
     method: 'GET',
     path: '/oauth/callback',
     config: {
+        pre: [{ method: companiesPre, assign: 'companies'}],
     handler: (request, reply) => {
         
         var postBody = {
@@ -357,78 +433,16 @@ server.route([
         Request.post(postBody, (e, r, data) => {
             
             var accessToken = Qs.parse(data);
-            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                AcountId: AWS_ACCOUNT_ID,
-                IdentityPoolId: POOL_ID,
-                RoleArn: ROLE_ARN,
-                Logins: {
-                    'accounts.google.com': request.auth.credentials.idToken
-                }
-            });
-            console.log(AWS.config.credentials);
+           
+            var user = Parse.User.current();
+            var privateUserData = user.get('privateUserData');
+            var relation = privateUserData.relation('companies'); 
             
-            //get id token and temp credentials from AWS
-            AWS.config.credentials.get(function(err) {
-                
-                if (err) {
-                    console.error('## credentials.get ##' + err);
-                    return process.exit(1);
-                } else {
-                    var cognitosync = new AWS.CognitoSync();
-                    cognitosync.listRecords({
-                        DatasetName: DATA_SET_NAME, // required
-                        IdentityId: AWS.config.credentials.identityId, // required
-                        IdentityPoolId: POOL_ID // required
-                    }, function(err, data) {
-                        
-                        if (err) {
-                            console.log('## listRecords ##' + err);
-                            return process.exit(1);
-                        } else {
-                            var syncCount = data.DatasetSyncCount;
-                            var params = {
-                                DatasetName: DATA_SET_NAME,
-                                IdentityId: AWS.config.credentials.identityId,
-                                IdentityPoolId: POOL_ID,
-                                SyncSessionToken: data.SyncSessionToken,
-                                RecordPatches: [{
-                                    Key: QBO_TOKEN,
-                                    Op: 'replace',
-                                    SyncCount: syncCount,
-                                    Value: accessToken.oauth_token
-                                }, {
-                                    Key: QBO_TOKEN_SECRET,
-                                    Op: 'replace',
-                                    SyncCount: syncCount,
-                                    Value: accessToken.oauth_token_secret
-                                }, {
-                                    Key: QBO_REALM_ID,
-                                    Op: 'replace',
-                                    SyncCount: syncCount,
-                                    Value: postBody.oauth.realmId
-                                }]
-                                
-                            }; 
-                            cognitosync.updateRecords(params, (err, data) => {
-                                
-                                if (err) {
-                                    console.error('## updateRecords ## ' + err);
-                                    return process.exit(1);
-                                } else {
-                                    var qboCredentials = {};
-                                    qboCredentials[QBO_TOKEN] = accessToken.oauth_token;
-                                    qboCredentials[QBO_TOKEN_SECRET] = accessToken.oauth_token_secret;
-                                    qboCredentials[QBO_REALM_ID] = postBody.oauth.realmId;
-                                    //set QBO cookie
-                                    request.session.set(QBO_SESSION_KEY, qboCredentials);
-                                }  
-                                return reply.redirect('/close');
-                                
-                            });
-                        }  
-                    });
-                }
-            }); 
+            //var Company = Parse.Object.extend('Company');
+            //var query = new Parse.Query(Company);
+            var query = relation.query();
+            
+            query.equalTo('realmId', postBody.oauth.realmId);  
            
         });
     }}

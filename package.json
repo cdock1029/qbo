@@ -3,6 +3,7 @@
     "accounting": "^0.4.1",
     "aws-sdk": "^2.1.16",
     "bell": "git://github.com/cdock1029/bell.git",
+    "boom": "^2.7.0",
     "crumb": "^4.0.2",
     "good": "^5.1.2",
     "good-console": "^4.1.0",
