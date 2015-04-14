@@ -11,7 +11,7 @@ var Temp = React.createClass({
 });
 
 React.render(
-    <Temp />,
+    <App />,
     document.getElementById('content')
 );
 

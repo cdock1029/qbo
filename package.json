@@ -11,6 +11,7 @@
     "hapi": "^8.2.0",
     "hapi-auth-cookie": "*",
     "hoek": "^2.11.0",
+    "moment": "^2.10.2",
     "node-quickbooks": "^1.0.14",
     "parse": "^1.4.1",
     "parse-react": "^0.1.3",

@@ -1,21 +1,36 @@
+var Invoice = require('./Invoice'),
+    Data = require('../Data'),
+    _ = require('underscore');
 
 var Invoices = React.createClass({
-    mixins: [ParseReact.Mixin], 
-    
-    observe: function() {
-    // Subscribe to all Invoice objects, ordered by creation date 
-    // The results will be available at this.data.invoices
-        return {
-            invoices: (new Parse.Query('Invoice')).ascending('createdAt')
-        };
+    getInitialState() {
+        return { invoices: [] };
+    },
+    componentDidMount() {
+        
+        Data.getInvoices({desc: 'TxnDate', limit: 50, CustomerRef: this.props.CustomerRef},function(err, data) {
+            
+          if (this.isMounted()) {
+            this.setState({invoices: data});  
+          }  
+          
+        }.bind(this));
+        
     },
     
     render: function() {
-        <ol>
-            {this.data.invoices.map(function(inv) {
-                return <li key={inv.objectId}>Name: {inv.name}</li>; 
-            })} 
-        </ol> 
+        var invoices = _.map(this.state.invoices, function(inv, index) {
+            return (
+                <Invoice key={index} invoice={inv} />
+            ); 
+        });
+        return (
+            invoices ? 
+            <div>
+                {invoices}
+            </div> 
+            : null
+        );
     }
 });
 

@@ -9,9 +9,9 @@ module.exports = React.createClass({
     getInitialState() {
         return { customers: [] };
     },
-    _sync() {
+    componentDidMount() {
         
-        Data.getCustomers({desc: 'Balance', limit: 10},function(err, data) {
+        Data.getCustomers({asc: 'CompanyName', limit: 20},function(err, data) {
             
           if (this.isMounted()) {
             this.setState({customers: data});  
@@ -23,20 +23,18 @@ module.exports = React.createClass({
     render() {
         
         var custs = _.map(this.state.customers, (c, index) => {
-            var fields = {key: index, name: c.DisplayName, balance: c.Balance};
-            return <Customer data={c} key={index}/>;
+            
+            return <Customer customer={c} key={index}/>;
         });
         return(
-            <div>
-            <button onClick={this._sync}>Sync</button>
-            <table>
+            <div className="col-lg-10">
+            <table className="table">
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Company</th>
-                    <th>Name</th>
+                    <th>Customer</th>
                     <th>Balance</th>
-                    <th></th>
+                    <th>Invoices</th>
                 </tr>
                 </thead>
                 <tbody>

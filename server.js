@@ -187,10 +187,10 @@ server.route([
         method: 'GET',
         path: '/',
         config: {
-            pre: [
+            /*pre: [
                 {method: parsePre, assign: 'Parse'}, 
                 {method: userPre, assign: 'user'}
-            ],
+            ],*/
             handler: (request, reply) => {
                 var ctx = {};
                 var company = request.session.get(QBO_SESSION_KEY); 
@@ -206,14 +206,14 @@ server.route([
         path: '/customers',
         config: {
             handler: (request, reply) => {
-                var user = Parse.User.current();
                 
-                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
-                qbo.findCustomers({
-                    asc: request.query.asc,
-                    desc: request.query.desc,
-                    limit: request.query.limit || 5
-                }, (err, customers) => {
+                var qbo = QBO();
+                qbo.findCustomers([
+                    {field: 'asc', value: request.query.asc, operator: '='},
+                    {field: 'desc', value: request.query.desc, operator: '='},
+                    {field: 'limit', value: request.query.limit || 10, operator: '='},
+                    {field: 'Balance', value: 0, operator: '>'}
+                ], (err, customers) => {
                     if (err) {
                         return reply(err);
                     } else {
@@ -229,8 +229,9 @@ server.route([
         path: '/payment',
         config: {
             handler: (request, reply) => {
-                var qboSession = request.session.get(QBO_SESSION_KEY);  
-                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
+                var qbo = QBO();
+                
+                qbo.
             }
         }
     },
@@ -304,13 +305,15 @@ server.route([
         path: '/invoices',
         config: {
             handler: (request, reply) => {
-                var qboSession = request.session.get(QBO_SESSION_KEY);  
-                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
-                qbo.findInvoices({
-                    asc: request.query.asc,
-                    desc: request.query.desc,
-                    limit: request.query.limit || 5
-                }, (err, invoices) => {
+                
+                var qbo = QBO();
+                qbo.findInvoices([
+                    {field: 'Balance', value: 0, operator: '>'},
+                    {field: 'limit', value: request.query.limit || 5, operator: '='},
+                    {field: 'desc', value: request.query.asc, operator: '='},
+                    {field: 'asc', value: request.query.asc, operator: '='},
+                    {field: 'CustomerRef', value: request.query.CustomerRef, operator: '='}
+                ], (err, invoices) => {
                     if (err) {
                         return reply(err);
                     } else {
@@ -325,7 +328,7 @@ server.route([
         method: ['GET', 'POST'],
         path: '/login',
         config: {
-            pre: [{method: parsePre, assign: 'Parse'}],
+            //pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
                 if (request.method === 'post') {
@@ -371,7 +374,7 @@ server.route([
         method: 'GET',
         path: '/logout',
         config: {
-            pre: [{method: parsePre, assign: 'Parse'}],
+            //pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
                 request.pre.Parse.User.logOut(); 
@@ -440,7 +443,7 @@ server.route([
     method: 'GET',
     path: '/oauth/callback',
     config: {
-        pre: [{ method: companiesPre, assign: 'companies'}],
+        //pre: [{ method: companiesPre, assign: 'companies'}],
     handler: (request, reply) => {
         
         var postBody = {
@@ -458,8 +461,9 @@ server.route([
         Request.post(postBody, (e, r, data) => {
             
             var accessToken = Qs.parse(data);
+            return reply({postBody: postBody, accessToken: accessToken});
            
-            var user = Parse.User.current();
+            /*var user = Parse.User.current();
             var privateUserData = user.get('privateUserData');
             var relation = privateUserData.relation('companies'); 
             
@@ -468,6 +472,8 @@ server.route([
             var query = relation.query();
             
             query.equalTo('realmId', postBody.oauth.realmId);  
+            */
+            
            
         });
     }}
@@ -534,7 +540,7 @@ server.register(
 
 var QBO = (token, tokenSec, realmId) => {
     
-    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, token, tokenSec, realmId, true/*use sandbox*/, true/*turn debugging on*/); 
+    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, 'qyprd4ca41z2erv8RQ4Uge3GaTJHtp7oBjUw9Cmth3HEov5G'/*token*/,'cdC5yzpNnTPfa33tDyfO5iXCCAkA7ScMuiqwJNdx'/*tokenSec*/,1315144815 /*realmId*/, true/*use sandbox*/, true/*turn debugging on*/); 
     
 };
 
@@ -547,16 +553,21 @@ var getParseSession = (parseUser) => {
     return obj;
 };
 
-var handleParseError = (err, reply) => {
-  if (err.code === Parse.Error.INVALID_SESSION_TOKEN) {
-      Parse.User.logOut();
-      // If web browser, render a log in screen
-      // If Express.js, redirect the user to the log in route   
-        return reply.redirect('/login');
-    // Other Parse API errors that you want to explicitly handle
-  } else {
-      return null;
-  }
-};
-
+var createPaymentList = function(invoiceList) {
+   
+    _.map(invoiceList, function(inv, index) {
+        var id, balance;
+        
+        id = inv.Id;//string
+        balance = inv.Balance;//decimal
+        return {
+            Amount: balance,
+            LinkedTxn: [{
+                TxnId: id,
+                TxnType: 'Invoice'
+            }]
+        }; 
+        
+    }); 
     
+};

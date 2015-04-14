@@ -1,4 +1,4 @@
-
+var Customers = require('./Customers');
 
 var App = React.createClass({
     
@@ -44,13 +44,10 @@ var App = React.createClass({
         var content = null; 
         var messageBlock = null;
         
-        if (this.state.loggedIn) {
+        if (true) {//this.state.loggedIn) {
             
             content = (
-                <div> 
-                    <button onClick={this._logout}>Logout</button>
-                    <Customers />
-                </div>
+                <Customers />
             ); 
         } else {
             content = (<div>
