@@ -10,12 +10,12 @@ module.exports = {
         });
         
     },
-    createBatchPayments(data, cb) {
+    submitPayments(data, cb) {
         $.ajax('/payment', {
             method: 'POST',
             data: data 
-        }).done((payment) => {
-            cb(null, payment); 
+        }).done((response) => {
+            cb(null, response.BatchItemResponse); 
         });  
     },
     getInvoices(query, cb) {
@@ -38,4 +38,6 @@ module.exports = {
         });
         
     }
+    
+    
 };

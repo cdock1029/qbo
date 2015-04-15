@@ -3,23 +3,15 @@ var Invoice = require('./Invoice'),
     _ = require('underscore');
 
 var Invoices = React.createClass({
+    
     getInitialState() {
-        return { invoices: [] };
-    },
-    componentDidMount() {
-        
-        Data.getInvoices({desc: 'TxnDate', limit: 50, CustomerRef: this.props.CustomerRef},function(err, data) {
-            
-          if (this.isMounted()) {
-            this.setState({invoices: data});  
-          }  
-          
-        }.bind(this));
-        
+        return { selectedInvoiceIds: [] };     
     },
     
+    
+    
     render: function() {
-        var invoices = _.map(this.state.invoices, function(inv, index) {
+        var invoices = _.map(this.props.invoices, function(inv, index) {
             return (
                 <Invoice key={index} invoice={inv} />
             ); 

@@ -231,7 +231,22 @@ server.route([
             handler: (request, reply) => {
                 var qbo = QBO();
                 
-                qbo.
+                var data = request.payload.payments;
+                
+                var items = _.map(data, function(item, index) {
+                    var customerId = item.CustomerRef.value,
+                        invoiceIds = item.invoiceIds;
+                     
+                    return createPaymentForCustomer(customerId, invoiceIds);
+                });
+                
+                qbo.batch('asdfasdf', function(err, result) {
+                    if (err) {
+                        return reply(err);
+                    } else {
+                        return reply(result);
+                    }
+                });
             }
         }
     },
@@ -310,8 +325,8 @@ server.route([
                 qbo.findInvoices([
                     {field: 'Balance', value: 0, operator: '>'},
                     {field: 'limit', value: request.query.limit || 5, operator: '='},
-                    {field: 'desc', value: request.query.asc, operator: '='},
                     {field: 'asc', value: request.query.asc, operator: '='},
+                    {field: 'desc', value: request.query.desc, operator: '='},
                     {field: 'CustomerRef', value: request.query.CustomerRef, operator: '='}
                 ], (err, invoices) => {
                     if (err) {
@@ -553,21 +568,24 @@ var getParseSession = (parseUser) => {
     return obj;
 };
 
-var createPaymentList = function(invoiceList) {
+var createPaymentForCustomer = function(customerId, invoices) {
    
-    _.map(invoiceList, function(inv, index) {
-        var id, balance;
-        
-        id = inv.Id;//string
-        balance = inv.Balance;//decimal
-        return {
-            Amount: balance,
-            LinkedTxn: [{
-                TxnId: id,
-                TxnType: 'Invoice'
-            }]
-        }; 
-        
-    }); 
-    
+    return {
+        CustomerRef: { value: customerId },
+        sparse: false,
+        Line: _.map(invoices, function(inv, index) {
+            return buildPayment(inv.Balance, inv.Id); 
+        }),
+    }; 
+};
+
+var buildPayment = function(amount, invoiceId) {
+   
+    return {
+        Amount: amount,
+        LinkedTxn: [{
+            TxnId: invoiceId,
+            TxnType: 'Invoice'
+        }]
+    }; 
 };
