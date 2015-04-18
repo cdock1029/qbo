@@ -1,5 +1,6 @@
 var Data = require('../Data'),
     accounting = require('accounting'),
+    _ = require('underscore'),
     Invoices = require('./Invoices');
     
 
@@ -22,7 +23,17 @@ module.exports = React.createClass({
     },
     
     handleChange(event) {
-        this.setState({checked: this.state.checked ? null : 'checked'});
+        
+        var customerId = this.props.customer.Id;
+        
+        if (this.state.checked) {
+            this.setState({ checked: null });
+            this.props.callback(customerId, null);
+        } else {
+            this.setState({ checked: 'checked' });
+            this.props.callback(customerId, this.state.invoices);
+        }
+        
     },
     
     render() {

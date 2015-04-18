@@ -11,11 +11,12 @@ module.exports = {
         
     },
     submitPayments(data, cb) {
+        console.log('submitPayments:',data);
         $.ajax('/payment', {
             method: 'POST',
-            data: data 
+            data: ({payments: data})
         }).done((response) => {
-            cb(null, response.BatchItemResponse); 
+            cb(response); 
         });  
     },
     getInvoices(query, cb) {

@@ -73,7 +73,7 @@ var extension = function (request, reply) {
 //server.ext('onRequest', extension);
 
 
-server.register([AuthCookie, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}], (err) => {
+server.register([AuthCookie/*, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}*/], (err) => {
     if (err) {
         console.error(err);
         return process.exit(1);
@@ -233,14 +233,22 @@ server.route([
                 
                 var data = request.payload.payments;
                 
-                var items = _.map(data, function(item, index) {
-                    var customerId = item.CustomerRef.value,
-                        invoiceIds = item.invoiceIds;
-                     
-                    return createPaymentForCustomer(customerId, invoiceIds);
+                var batchId = 1; 
+                var items = _.map(data, function(value, key) {
+                    if (value) {
+                        var customerId = value.customerId;
+                        var invoices = value.invoices;
+                         
+                        return {
+                            bId: batchId++,
+                            operation: 'create',
+                            Payment: createPaymentForCustomer(customerId, invoices)
+                        };
+                    }
                 });
                 
-                qbo.batch('asdfasdf', function(err, result) {
+                console.log('batchItemRequest: ', items);
+                qbo.batch(items, function(err, result) {
                     if (err) {
                         return reply(err);
                     } else {
@@ -569,13 +577,19 @@ var getParseSession = (parseUser) => {
 };
 
 var createPaymentForCustomer = function(customerId, invoices) {
-   
+    
+    var total = 0.0; 
+    var line = _.map(invoices, function(inv, index) {
+            var balance = parseFloat(inv.Balance);
+            total += balance; 
+            return buildPayment(balance, inv.Id); 
+        });
+        
     return {
         CustomerRef: { value: customerId },
+        TotalAmt: (Math.round(total * 100) / 100).toFixed(2),
         sparse: false,
-        Line: _.map(invoices, function(inv, index) {
-            return buildPayment(inv.Balance, inv.Id); 
-        }),
+        Line: line
     }; 
 };
 

@@ -8,7 +8,7 @@ var Data = require('../Data'),
 
 module.exports = React.createClass({
     getInitialState() {
-        return { customers: Immutable.List(), payments: Immutable.Map({whatever: Immutable.Set.of(4,5)}) };
+        return { customers: Immutable.List(), payments: Immutable.Map() };
     },
     
     shouldComponentUpdate(nextProps, nextState) {
@@ -30,22 +30,23 @@ module.exports = React.createClass({
         
     },
     
-    _updatePayments(customerId, invoiceIds) {
-        var paymentsMap = this.state.payments,
-            updatedMap,
-            customerIdSet = paymentsMap.get(customerId); 
+    _updatePayments(customerId, invoices) {
+        console.log('Customers _updatePayments: %s', customerId, invoices);
+        var paymentsMap = this.state.payments;
+        var updatedMap;
+        var customerObject = paymentsMap.get(customerId); 
             
-        if (customerIdSet) {
-            updatedMap = paymentsMap.set(customerId, customerIdSet.merge(invoiceIds)); 
+        if (customerObject) {
+            updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices}); 
         } else {
-            updatedMap = paymentsMap.set(customerId, Immutable.Set.of(invoiceIds));
+            updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices});
         }
         this.setState({ payments: updatedMap });
     },
     
     _submitPayments() {//will have customerRef,List of amount / inv Ids
-    
-        Data.submitPayments(this.state.payments, function(batchItemResponse) {
+        var payments = this.state.payments.toObject(); 
+        Data.submitPayments(payments, function(batchItemResponse) {
             alert('Payments submitted!');
             console.log(batchItemResponse); 
         }) 
@@ -61,7 +62,7 @@ module.exports = React.createClass({
             <div className="col-lg-10">
             <div className="row">
                 <div className="col-md-6 col-md-offset-6">
-                    <button onClick={this._updatePayments.bind(null, 'whatever', [1,2,3])}>Pay Selected</button>
+                    <button onClick={this._submitPayments}>Pay Selected</button>
                 </div>
             </div>
             
