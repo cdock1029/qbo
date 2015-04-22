@@ -1,7 +1,8 @@
 'use strict';
 
 var Qs = require('qs');
-
+    //Immutable = require('immutable');
+    
 module.exports = {
     getCustomers(query, cb) {
         
@@ -16,7 +17,7 @@ module.exports = {
             method: 'POST',
             data: ({payments: data})
         }).done((response) => {
-            cb(response); 
+            cb(null, response); 
         });  
     },
     getInvoices(query, cb) {

@@ -1,13 +1,15 @@
-var Data = require('../Data'),
+var Data = require('../flux/Data'),
     accounting = require('accounting'),
     _ = require('underscore'),
     Invoices = require('./Invoices');
+    
+var TableRow = require('./TableRow');
     
 
 module.exports = React.createClass({
     
     getInitialState() {
-        return {checked: null, invoices: null};     
+        return {invoices: null};     
     },
     
     componentDidMount() {
@@ -24,41 +26,41 @@ module.exports = React.createClass({
     
     handleChange(event) {
         
+        console.log('handleChange in Customer selected?', this.props.selected);
         var customerId = this.props.customer.Id;
         
-        if (this.state.checked) {
-            this.setState({ checked: null });
+        if (this.props.selected) {
             this.props.callback(customerId, null);
         } else {
-            this.setState({ checked: 'checked' });
             this.props.callback(customerId, this.state.invoices);
         }
         
     },
     
     render() {
-        var {key, customer} = this.props; 
-        return(
-            <tr key={key}>
-                <td>{customer.Id}</td>
-                <td>
-                    <div className="row">
-                        <div className="col-xs-12">{customer.DisplayName}</div>
-                    </div>
-                    <div className="row">
-                        <div className="col-xs-12">{customer.CompanyName}</div>
-                    </div>
-                </td>
-                <td>
-                <div className="checkbox">
-                    <label>
-                        <input type="checkbox" checked={this.state.checked} onChange={this.handleChange}/>{accounting.formatMoney(customer.Balance)}
-                    </label>
+        var customer = this.props.customer;
+        var customerPanel = (
+            <div className="panel panel-default" onClick={this.handleChange} style={{cursor: 'pointer'}}>
+                <div className="panel-heading">
+                    <h3 className="panel-title">{customer.CompanyName}</h3>
                 </div>
                 
-                </td>
-                <td><Invoices invoices={this.state.invoices} /></td>
-            </tr>
+                <div className="panel-body">
+                    <p className={this.props.selected ? 'bg-success' : null}>{accounting.formatMoney(customer.Balance)}</p>
+                    <div className="row">
+                        <div className="col-xs-12">{customer.DisplayName}</div>
+                    </div>        
+                </div>
+            </div>
+        );
+        var cells = [
+            
+            customerPanel,
+            <Invoices invoices={this.state.invoices} />
+            
+        ];
+        return(
+           <TableRow cells={cells} /> 
         );
     }
     

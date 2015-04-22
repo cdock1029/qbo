@@ -1,5 +1,5 @@
 var Invoice = require('./Invoice'),
-    Data = require('../Data'),
+    Data = require('../flux/Data'),
     _ = require('underscore');
 
 var Invoices = React.createClass({
@@ -18,7 +18,7 @@ var Invoices = React.createClass({
         });
         return (
             invoices ? 
-            <div>
+            <div className="accordion">
                 {invoices}
             </div> 
             : null
