@@ -1,4 +1,5 @@
 var Customers = require('./Customers'),
+    //React = require('react'),
     Alert = require('./Alert');
 
 var App = React.createClass({

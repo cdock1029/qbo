@@ -1,4 +1,4 @@
-//var React = require('react'),
+//var React = require('react');
 var Data = require('../flux/Data'),
     Table = require('./Table'),
     Customer = require('./Customer'),
@@ -73,7 +73,6 @@ module.exports = React.createClass({
                         <Alert type={alert.type} message={alert.message} strong={alert.strong} /> : 
                         null;
             
-        CUSTS = this.state.customers;
         var custs = this.state.customers.map((c, index) => {
             return <Customer customer={c.toObject()} key={index} callback={this._updatePayments} selected={this.state.payments.has(c.get('Id'))}/>;
         });
@@ -87,7 +86,7 @@ module.exports = React.createClass({
             
             <div className="row">
             
-            <Table headings={['Customer', 'Invoices']} body={custs} />
+            <Table headings={['Address','Customer', 'Balance', 'Invoices']} body={custs} />
             </div>
             </div>
         );

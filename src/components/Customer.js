@@ -4,6 +4,7 @@ var Data = require('../flux/Data'),
     Invoices = require('./Invoices');
     
 var TableRow = require('./TableRow');
+var classnames = require('classnames');
     
 
 module.exports = React.createClass({
@@ -40,13 +41,11 @@ module.exports = React.createClass({
     render() {
         var customer = this.props.customer;
         var customerPanel = (
-            <div className="panel panel-default" onClick={this.handleChange} style={{cursor: 'pointer'}}>
+            <div className="panel panel-default" style={{cursor: 'pointer'}}>
                 <div className="panel-heading">
                     <h3 className="panel-title">{customer.CompanyName}</h3>
                 </div>
-                
                 <div className="panel-body">
-                    <p className={this.props.selected ? 'bg-success' : null}>{accounting.formatMoney(customer.Balance)}</p>
                     <div className="row">
                         <div className="col-xs-12">{customer.DisplayName}</div>
                     </div>        
@@ -54,10 +53,10 @@ module.exports = React.createClass({
             </div>
         );
         var cells = [
-            
-            customerPanel,
-            <Invoices invoices={this.state.invoices} />
-            
+            {content: customer.CompanyName},
+            {content: customer.DisplayName},
+            {content: accounting.formatMoney(customer.Balance), hover: {backgroundColor: '#e8e8e8'}, onClick: this.handleChange, className: classnames({success: this.props.selected}), style: {cursor: 'pointer'}},
+            {content: <Invoices invoices={this.state.invoices} />}
         ];
         return(
            <TableRow cells={cells} /> 
