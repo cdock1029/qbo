@@ -6,14 +6,15 @@ var Data = require('../flux/Data'),
     accounting = require('accounting'),
     Immutable = require('immutable'),
     Alert = require('./Alert'),
+    Spinner = require('react-spinkit'),
     {ButtonToolbar, Button, Row, Col, Pager, PageItem} = require('react-bootstrap'), 
     _ = require('underscore');
 
-var pageSize = 20;
+var pageSize = 30;
 
 module.exports = React.createClass({
     getInitialState() {
-        return { customers: Immutable.List(), payments: Immutable.Map(), expanded: true, isSubmitting: false};
+        return { customers: Immutable.List(), invoices: Immutable.Map(), payments: Immutable.Map(), expanded: true, isSubmitting: false, loading: false};
     },
     
     shouldComponentUpdate(nextProps, nextState) {
@@ -22,14 +23,15 @@ module.exports = React.createClass({
             ! Immutable.is(this.state.payments, nextState.payments) || 
             nextState.expanded !== this.state.expanded ||
             nextState.isSubmitting !== this.state.isSubmitting ||
+            nextState.loading !== this.state.loading ||
             nextState.previous !== this.state.previous ||
             nextState.next !== this.state.next
         );
     },
     
     _getCustomerData(offset) {
+        this.setState({loading: true});
         Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset},function(err, data) {
-            var customers = data.Customer;
             if (this.isMounted()) {
                 if (err) {
                     console.log('customer Data Error:', err);
@@ -38,8 +40,10 @@ module.exports = React.createClass({
                     console.log('customer data returned'); 
                     var customerList = this.state.customers;
                     this.setState({
-                        customers: Immutable.List(customers),//customerList.merge(customers),
-                        next: customers.length === pageSize ? data.startPosition + data.maxResults : null,
+                        loading: false,
+                        invoices: Immutable.Map(data.Invoice),
+                        customers: Immutable.List(data.Customer),//customerList.merge(customers),
+                        next: data.maxResults === pageSize ? data.startPosition + data.maxResults : null,
                         previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults  : 1)
                     });  
                 }
@@ -81,6 +85,7 @@ module.exports = React.createClass({
                         strong: 'Success! '
                     },
                     isSubmitting: false,
+                    payments: null
                 });
                 this._getCustomerData(1); 
             }
@@ -106,7 +111,9 @@ module.exports = React.createClass({
         var custs = this.state.customers.map((c, index) => {
             var selected = this.state.payments.has(c.Id);
             
-            return <Customer customer={c} 
+            return <Customer 
+                    customer={c} 
+                    invoices={this.state.invoices.get(c.Id)}
                     key={index} 
                     callback={this._updatePayments} 
                     selected={selected} 
@@ -114,7 +121,11 @@ module.exports = React.createClass({
                     expanded={this.state.expanded} />;
             
         });
-        
+        var spinner = this.state.loading ? 
+                        <Button disabled>
+                            <Spinner spinnerName='three-bounce' />
+                        </Button> : 
+                        null;
         return(
             <div className="col-lg-9">
             <div className="row">
@@ -123,6 +134,7 @@ module.exports = React.createClass({
                         <Button bsStyle="success" onClick={this._submitPayments} disabled={this.state.payments.size < 1}>Pay Selected</Button> 
                         <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
                         <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.state.payments.size < 1}>Deselect All</Button> 
+                        {spinner} 
                     </ButtonToolbar>
                 </div>
             </div>
@@ -136,7 +148,9 @@ module.exports = React.createClass({
             </Row>
             <div className="row">
             
-            <Table headings={['Address','Customer', 'Open Balance', 'Invoices']} body={custs} />
+            <Table headings={['Address','Customer', 'Open Balance', 'Invoices']}>
+                {custs}
+            </Table>
             </div>
             </div>
         );

@@ -4,7 +4,7 @@ var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 module.exports = React.createClass({
     
-    //mixins: [React.addons.PureRenderMixin],
+    mixins: [React.addons.PureRenderMixin],
     
     propTypes: {
         headings: React.PropTypes.array.isRequired,
@@ -21,7 +21,7 @@ module.exports = React.createClass({
                 </tr>
             </thead>
             <ReactCSSTransitionGroup transitionName="tenants" component="tbody">
-                {this.props.body}
+                {this.props.children}
             </ReactCSSTransitionGroup>
         </table>    
     }    

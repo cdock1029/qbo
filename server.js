@@ -148,11 +148,30 @@ server.route([
                     {field: 'limit', value: request.query.limit || 10, operator: '='},
                     {field: 'offset', value: request.query.offset || 1, operator: '='},
                     {field: 'Balance', value: 0, operator: '>'}
-                ], (err, customers) => {
+                ], (err, response) => {
+                    var customerInvoiceMap = {};
                     if (err) {
                         return reply(err);
                     } else {
-                        return reply(customers); 
+                        var batches = _.map(response.QueryResponse.Customer, (customer, index) => {
+                            return {
+                                bId: customer.Id,
+                                Query: ("select * from Invoice where CustomerRef = '" + customer.Id + "' and Balance > '0'")
+                            }; 
+                        });
+                        
+                        qbo.batch(batches, (err, result) => {
+                            if (err) {
+                                return reply(err); 
+                            } else {
+                                _.each(result.BatchItemResponse, (item, index) => {
+                                    customerInvoiceMap[item.bId] = item.QueryResponse.Invoice;
+                                });
+                                response.QueryResponse.Invoice = customerInvoiceMap;
+                                return reply(response); 
+                            }
+                        });
+                        //return reply(customers); 
                     }     
                 });  
                 

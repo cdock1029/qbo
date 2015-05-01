@@ -7,7 +7,7 @@ var accounting = require('accounting');
 
 var Invoices = React.createClass({
     
-    //mixins: [React.addons.PureRenderMixin],
+    mixins: [React.addons.PureRenderMixin],
     
     render: function() {
         var panels =  _.map(this.props.invoices, function(invoice, index) {
@@ -55,9 +55,9 @@ var Invoices = React.createClass({
                     }, this);
         return (
             this.props.invoices ? 
-                <div>
+                <PanelGroup>
                     {panels} 
-                </div>
+                </PanelGroup>
             : null
         );
     }
