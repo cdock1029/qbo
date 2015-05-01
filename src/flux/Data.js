@@ -7,7 +7,7 @@ module.exports = {
     getCustomers(query, cb) {
         
         $.ajax('/customers?' + Qs.stringify(query)).done((data) => {
-            cb(null, data.QueryResponse.Customer);//array of customers 
+            cb(null, data.QueryResponse);//array of customers 
         });
         
     },

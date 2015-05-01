@@ -1,3 +1,21 @@
-.container-fluid {
+.container-flui {
     padding: 20px;
+}
+
+.tenants-enter {
+  opacity: 0.01;
+  transition: opacity .5s ease-in;
+}
+
+.tenants-enter.tenants-enter-active {
+  opacity: 1;
+}
+
+.tenants-leave {
+  opacity: 1;
+  transition: opacity .5s ease-in;
+}
+
+.tenants-leave.tenants-leave-active {
+  opacity: 0.01;
 }

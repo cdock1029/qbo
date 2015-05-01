@@ -5,6 +5,8 @@ var Data = require('../flux/Data'),
     
 var TableRow = require('./TableRow');
 var classnames = require('classnames');
+var Spinner = require('react-spinkit');
+var {Button} = require('react-bootstrap');
     
 
 module.exports = React.createClass({
@@ -13,16 +15,27 @@ module.exports = React.createClass({
         return {invoices: null};     
     },
     
-    componentDidMount() {
-        
+    _getInvoices() {
+        this.setState({isLoading: true});
         Data.getInvoices({desc: 'TxnDate', limit: 50, CustomerRef: this.props.customer.Id},function(err, data) {
-            
-          if (this.isMounted()) {
-            this.setState({invoices: data});  
-          }  
-          
+            setTimeout(function() {
+                if (this.isMounted()) {
+                    console.log('setting invoice state after server call');
+                    this.setState({invoices: data, isLoading: false});  
+                }   
+            }.bind(this), 1200); 
         }.bind(this));
-        
+    },
+    
+    componentDidMount() {
+        this._getInvoices();    
+    },
+    
+    componentWillReceiveProps: function(nextProps) {
+        if (nextProps.customer.Id !== this.props.customer.Id) {
+            console.log('customer willReceiveProps Ids !==');
+            this._getInvoices();    
+        }
     },
     
     handleChange(event) {
@@ -55,8 +68,8 @@ module.exports = React.createClass({
         var cells = [
             {content: customer.CompanyName},
             {content: customer.DisplayName},
-            {content: accounting.formatMoney(customer.Balance), hover: {backgroundColor: '#e8e8e8'}, onClick: this.handleChange, className: classnames({success: this.props.selected}), style: {cursor: 'pointer'}},
-            {content: <Invoices invoices={this.state.invoices} />}
+            {content: this.props.isSubmitting ? <Spinner spinnerName='double-bounce' /> : <Button bsStyle={this.props.selected ? 'success' : 'default'} bsSize="large" onClick={this.handleChange}>{accounting.formatMoney(customer.Balance)}</Button>},
+            {content: this.state.isLoading ? <Spinner spinnerName='three-bounce' /> : <Invoices invoices={this.state.invoices} expanded={this.props.expanded} />}
         ];
         return(
            <TableRow cells={cells} /> 

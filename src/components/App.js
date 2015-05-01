@@ -1,26 +1,47 @@
-var Customers = require('./Customers'),
+var Customers = require('./Customers');
     //React = require('react'),
-    Alert = require('./Alert');
+var Alert = require('./Alert');
+var Spinner = require('react-spinkit');
+var {Grid, Row, Col} = require('react-bootstrap');
 
 var App = React.createClass({
     
     getInitialState: function() {
         
-        return {alert: null};
+        return {alert: null, loading: false};
     },
     
     _hideAlert() {
-        
-        this.setState({alert: false});   
+        this.setState({alert: null});   
+    },
+    
+    _showAlert(params) {
+        this.setState({alert: params})   
+    },
+    
+    _toggleLoading() {
+        this.setState({loading: !this.state.loading});   
     },
     
     render() {
        
-        var content = <Customers />;
+        var content = <Customers loadingCallback={this._toggleLoading} />;
         
+        var loading = this.state.loading ? 
+            <Row> 
+                <Col sm={4} smPush={4}>
+                    <Spinner spinnerName='three-bounce'/> 
+                </Col>
+            </Row> :
+            null;
+            
+        var alert = this.state.alert ? 
+            <Alert {...this.state.alert} close={this._hideAlert} /> :
+            null;
         return(
             <div>
-                {this.state.alert && <Alert {...this.state.alert} close={this._hideAlert} />}
+                {loading}
+                {alert}
                 {content}
             </div>
         ); 

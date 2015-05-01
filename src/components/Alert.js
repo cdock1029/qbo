@@ -1,9 +1,10 @@
 'use strict';
 
-var classnames = require('classnames'),
-    PureRenderMixin = React.addons.PureRenderMixin;
+var {Alert} = require('react-bootstrap');
+var PureRenderMixin = React.addons.PureRenderMixin;
 
 module.exports = React.createClass({
+    
     mixins: [PureRenderMixin],
     
     propTypes: {
@@ -18,10 +19,10 @@ module.exports = React.createClass({
     
     render() {
         return (
-            <div className={classnames('alert', this.props.type)}>
-                <a href="#" className="close" onClick={this._close}>&times;</a>
-                <strong>{this.props.strong}</strong>{this.props.message} 
-            </div>     
+            <Alert bsStyle={this.props.type} onDismiss={this._close}>
+                <h4>{this.props.strong}</h4>
+                <p>{this.props.message}</p> 
+            </Alert>     
         );     
     }    
 });

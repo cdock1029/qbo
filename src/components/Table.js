@@ -1,7 +1,10 @@
 //var React = require('react');
 var _ = require('underscore');
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 module.exports = React.createClass({
+    
+    //mixins: [React.addons.PureRenderMixin],
     
     propTypes: {
         headings: React.PropTypes.array.isRequired,
@@ -17,9 +20,9 @@ module.exports = React.createClass({
                     })} 
                 </tr>
             </thead>
-            <tbody>
+            <ReactCSSTransitionGroup transitionName="tenants" component="tbody">
                 {this.props.body}
-            </tbody>
+            </ReactCSSTransitionGroup>
         </table>    
     }    
 });

@@ -58,21 +58,6 @@ var server = new Hapi.Server();//{
 
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
-
-var extension = function (request, reply) {
-    //var companySession = request.session && request.session.get(QBO_SESSION_KEY),
-    var user = Parse.User.current(),
-        path = request.path;
-    
-    if (! user) {//&& path !== '/login') {
-        request.setUrl('/login');
-    } 
-    
-    return reply.continue(); 
-};
-//server.ext('onRequest', extension);
-
-
 server.register([AuthCookie/*, { register: require('crumb'), options: { cookieOptions: { isSecure: true }}}*/], (err) => {
     if (err) {
         console.error(err);
@@ -88,48 +73,6 @@ server.register([AuthCookie/*, { register: require('crumb'), options: { cookieOp
     
     //server.auth.default('user');
 });
-
-var parsePre = function(request, reply) {
-    
-    var Parse = require('parse').Parse;
-    Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
-    
-    return reply(Parse);
-};
-
-var userPre = function(request, reply) {
-    var Parse = request.pre.Parse,
-        token = request.session && request.session.get('token');
-    
-    if (token) {
-        Parse.User.become(token).then(function(user) {
-            return reply(user); 
-        }, function(err) {
-            return reply(err).takeover(); 
-        });
-    } else {
-        reply.redirect('/login').takeover(); 
-    }
-};
-
-var companiesPre = function(request, reply) {
-    
-    if (request.method === 'get') {
-        var Parse = request.pre.Parse, 
-            user = request.pre.user;
-        
-        user.get('privateUserData').fetch().then(function(privateUserData) {
-            var relation = privateUserData.relation("companies");
-            return relation.query().find();
-        }).then(function(companies) {
-            return reply(companies);
-        }, function(err) {
-            return reply(err).takeover();
-        });
-    } else {
-        return reply.continue();
-    }
-};
 
 server.route([
     {
@@ -148,11 +91,6 @@ server.route([
         method: ['GET','POST'],
         path: '/companies',
         config: {
-            pre: [
-                { method: parsePre, assign: 'Parse'}, 
-                { method: userPre, assign: 'user'}, 
-                { method: companiesPre, assign: 'companies' }
-            ],
             handler: (request, reply) => {
                 
                 if (request.method === 'post') {
@@ -187,10 +125,6 @@ server.route([
         method: 'GET',
         path: '/',
         config: {
-            /*pre: [
-                {method: parsePre, assign: 'Parse'}, 
-                {method: userPre, assign: 'user'}
-            ],*/
             handler: (request, reply) => {
                 var ctx = {};
                 var company = request.session.get(QBO_SESSION_KEY); 
@@ -212,6 +146,7 @@ server.route([
                     {field: 'asc', value: request.query.asc, operator: '='},
                     {field: 'desc', value: request.query.desc, operator: '='},
                     {field: 'limit', value: request.query.limit || 10, operator: '='},
+                    {field: 'offset', value: request.query.offset || 1, operator: '='},
                     {field: 'Balance', value: 0, operator: '>'}
                 ], (err, customers) => {
                     if (err) {
@@ -351,7 +286,6 @@ server.route([
         method: ['GET', 'POST'],
         path: '/login',
         config: {
-            //pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
                 if (request.method === 'post') {
@@ -397,7 +331,6 @@ server.route([
         method: 'GET',
         path: '/logout',
         config: {
-            //pre: [{method: parsePre, assign: 'Parse'}],
             handler: (request, reply) => {
                 
                 request.pre.Parse.User.logOut(); 
@@ -466,7 +399,6 @@ server.route([
     method: 'GET',
     path: '/oauth/callback',
     config: {
-        //pre: [{ method: companiesPre, assign: 'companies'}],
     handler: (request, reply) => {
         
         var postBody = {
@@ -563,17 +495,8 @@ server.register(
 
 var QBO = (token, tokenSec, realmId) => {
     
-    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, 'qyprd4ca41z2erv8RQ4Uge3GaTJHtp7oBjUw9Cmth3HEov5G'/*token*/,'cdC5yzpNnTPfa33tDyfO5iXCCAkA7ScMuiqwJNdx'/*tokenSec*/,1315144815 /*realmId*/, true/*use sandbox*/, true/*turn debugging on*/); 
+    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, process.env.TOKEN_2/*token*/,process.env.TOKEN_SECRET_2/*tokenSec*/,process.env.REALM_2/*realmId*/, false/*use sandbox*/, true/*turn debugging on*/); 
     
-};
-
-var getParseSession = (parseUser) => {
-    var obj = {};
-    obj.id = parseUser.id;
-    obj.username = parseUser.username;
-    obj.email = parseUser.email;
-    obj.sessionToken = parseUser._sessionToken;
-    return obj;
 };
 
 var createPaymentForCustomer = function(customerId, invoices) {

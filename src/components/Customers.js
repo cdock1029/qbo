@@ -1,26 +1,35 @@
 //var React = require('react');
 var Data = require('../flux/Data'),
+    classnames = require('classnames'),
     Table = require('./Table'),
     Customer = require('./Customer'),
     accounting = require('accounting'),
     Immutable = require('immutable'),
     Alert = require('./Alert'),
+    {ButtonToolbar, Button, Row, Col, Pager, PageItem} = require('react-bootstrap'), 
     _ = require('underscore');
 
+var pageSize = 20;
 
 module.exports = React.createClass({
     getInitialState() {
-        return { customers: Immutable.List(), payments: Immutable.Map() };
+        return { customers: Immutable.List(), payments: Immutable.Map(), expanded: true, isSubmitting: false};
     },
     
     shouldComponentUpdate(nextProps, nextState) {
-        return ! Immutable.is(this.state.customers, nextState.customers) || ! Immutable.is(this.state.payments, nextState.payments);
+        return ( 
+            ! Immutable.is(this.state.customers, nextState.customers) || 
+            ! Immutable.is(this.state.payments, nextState.payments) || 
+            nextState.expanded !== this.state.expanded ||
+            nextState.isSubmitting !== this.state.isSubmitting ||
+            nextState.previous !== this.state.previous ||
+            nextState.next !== this.state.next
+        );
     },
     
-    _getCustomerData() {
-        
-        Data.getCustomers({asc: 'CompanyName', limit: 20},function(err, data) {
-            
+    _getCustomerData(offset) {
+        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset},function(err, data) {
+            var customers = data.Customer;
             if (this.isMounted()) {
                 if (err) {
                     console.log('customer Data Error:', err);
@@ -28,14 +37,18 @@ module.exports = React.createClass({
                 } else {
                     console.log('customer data returned'); 
                     var customerList = this.state.customers;
-                    this.setState({customers: customerList.merge(data)});  
+                    this.setState({
+                        customers: Immutable.List(customers),//customerList.merge(customers),
+                        next: customers.length === pageSize ? data.startPosition + data.maxResults : null,
+                        previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults  : 1)
+                    });  
                 }
             }
         }.bind(this));
     },
     
     componentDidMount() {
-        this._getCustomerData();
+        this._getCustomerData(1);
     },
     
     _updatePayments(customerId, invoices) {
@@ -54,16 +67,33 @@ module.exports = React.createClass({
     },
     
     _submitPayments() {//will have customerRef,List of amount / inv Ids
+        this.setState({isSubmitting: true});
         var payments = this.state.payments.toObject(); 
         Data.submitPayments(payments, function(err, batchItemResponse) {
             if (err) {
-                
+                this.setState({isSubmitting: false});
             } else {
                 console.log(batchItemResponse); 
-                this.setState({ alert: { type: 'alert-success', message: 'Payments applied', strong: 'Success! '}})
-                this._getCustomerData(); 
+                this.setState({ 
+                    alert: { 
+                        type: 'alert-success', 
+                        message: 'Payments applied', 
+                        strong: 'Success! '
+                    },
+                    isSubmitting: false,
+                });
+                this._getCustomerData(1); 
             }
         }.bind(this)); 
+    },
+    
+    _toggleExpanded() {
+        var newState = !this.state.expanded;
+        this.setState({expanded: newState});     
+    },
+    
+    _deselectAll() {
+        this.setState({payments: this.state.payments.clear()})  
     },
     
     render() {
@@ -74,19 +104,39 @@ module.exports = React.createClass({
                         null;
             
         var custs = this.state.customers.map((c, index) => {
-            return <Customer customer={c.toObject()} key={index} callback={this._updatePayments} selected={this.state.payments.has(c.get('Id'))}/>;
+            var selected = this.state.payments.has(c.Id);
+            
+            return <Customer customer={c} 
+                    key={index} 
+                    callback={this._updatePayments} 
+                    selected={selected} 
+                    isSubmitting={selected && this.state.isSubmitting} 
+                    expanded={this.state.expanded} />;
+            
         });
+        
         return(
-            <div className="col-lg-10">
+            <div className="col-lg-9">
             <div className="row">
                 <div className="col-md-6 col-md-offset-6">
-                    <button onClick={this._submitPayments}>Pay Selected</button>
+                    <ButtonToolbar>
+                        <Button bsStyle="success" onClick={this._submitPayments} disabled={this.state.payments.size < 1}>Pay Selected</Button> 
+                        <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
+                        <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.state.payments.size < 1}>Deselect All</Button> 
+                    </ButtonToolbar>
                 </div>
             </div>
-            
+            <Row>
+                <Col md={6} mdOffset={4}>
+                    <Pager>
+                        <PageItem previous disabled={!this.state.previous} onClick={this.state.previous ? this._getCustomerData.bind(null, this.state.previous) : null}>&larr; Previous Page</PageItem>
+                        <PageItem next disabled={!this.state.next} onClick={this.state.next ? this._getCustomerData.bind(null, this.state.next) : null}>Next Page &rarr;</PageItem> 
+                    </Pager> 
+                </Col>
+            </Row>
             <div className="row">
             
-            <Table headings={['Address','Customer', 'Balance', 'Invoices']} body={custs} />
+            <Table headings={['Address','Customer', 'Open Balance', 'Invoices']} body={custs} />
             </div>
             </div>
         );
