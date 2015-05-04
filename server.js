@@ -193,7 +193,7 @@ server.route([
         path: '/count',
         config: {
             handler: (request, reply) => {
-                var qbo = QBO();
+                var qbo = QBO(_.findWhere(request.auth.credentials.companies, {isSelected: true}));
                 
                 qbo.findCustomers({count: true}, function(err, result) {
                     if (err) {
@@ -210,7 +210,8 @@ server.route([
         path: '/payment',
         config: {
             handler: (request, reply) => {
-                var qbo = QBO();
+                
+                var qbo = QBO(_.findWhere(request.auth.credentials.companies, {isSelected: true}));
                 
                 var data = request.payload.payments;
                 
@@ -483,15 +484,11 @@ server.route([
                 if (err) {
                     return reply(err);
                 } else {
-                    var token = request.auth.credentials.user.token;
-                    var pud, user;
-                    Parse.User.become(token).then( _user => {
-                        
-                        user = Parse.User.current();
-                        var _pud = user.get('privateUserData');
-                        return _pud.fetch();
-                        
-                    }).then( privateUserData => {
+                    //var token = request.auth.credentials.user.token;
+                    var user = Parse.User.current();
+                    var pud;
+                    
+                    user.get('privateUserData').fetch().then( privateUserData => {
                             
                             pud = privateUserData;
                             
@@ -519,7 +516,7 @@ server.route([
 
                     }).then( companies => {
                             
-                            request.auth.session.set('companies', companies);     
+                            request.auth.session.set('companies', sortAndSetCompanies(companies));     
                             return reply.redirect('/close');
                             
                     }, err => {
@@ -531,7 +528,24 @@ server.route([
             });
         });
     }}
-},{
+}, 
+    {
+        method: 'POST',
+        path: '/company',
+        config : {
+            handler: (request, reply) => {
+                var companies = request.auth.credentials.companies;
+                var selected = parseInt(request.payload.company, 10);
+                
+                for (var i=0; i < companies.length; i++) {
+                    companies[i].isSelected = (i === selected);    
+                }
+                request.auth.session.set('companies', companies);
+                return reply.redirect('/');
+            }    
+        }
+    },
+    {
     method: 'GET',
     path: '/close',
     config: {

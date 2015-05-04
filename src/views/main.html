@@ -25,8 +25,8 @@
             <div class="col-md-3 col-md-push-9">
             <ipp:connectToIntuit></ipp:connectToIntuit>
             <a href="/logout">Logout</a>
-            <form>
-                <select class="form-control" name="company">
+            <form id="companyForm" method="post" action="/company">
+                <select class="form-control" name="company" id="companySelect">
                     {{#each companies}}    
                         {{companyOption @index this}}
                     {{/each}}
@@ -42,5 +42,15 @@
     <!--<script src="https://www.parsecdn.com/js/parse-latest.js"></script>-->
     <!--<script src="https://www.parsecdn.com/js/parse-react.js"></script>-->
     <script src="src/bundle.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            
+            $('#companySelect').change(function() {
+                var form = $('#companyForm');
+                form.submit();
+            }); 
+             
+        });
+    </script>
 </body>
 </html>
