@@ -20,15 +20,21 @@
         </script>
 </head>
 <body>
-    <ipp:connectToIntuit></ipp:connectToIntuit>
     <div class="container-fluid">
-        {{#if companyName}}
-            <h4>{{companyName}}</h4> 
-        {{/if}}
-        <div id="content" class="row">
-        <!--<a href="/logout">Logout</a>-->
-        <!--<a href="/companies">Companies</a>-->
+        <div class="row">
+            <div class="col-md-3 col-md-push-9">
+            <ipp:connectToIntuit></ipp:connectToIntuit>
+            <a href="/logout">Logout</a>
+            <form>
+                <select class="form-control" name="company">
+                    {{#each companies}}    
+                        {{companyOption @index this}}
+                    {{/each}}
+                </select>
+            </form>
+            </div>
         </div>
+        <div id="content" class="row"></div>
     </div>
     <script src="https://code.jquery.com/jquery-latest.js"></script>
     <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.1/react-with-addons.js"></script>-->

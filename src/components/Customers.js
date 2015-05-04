@@ -1,14 +1,15 @@
 //var React = require('react');
 var Data = require('../flux/Data'),
     classnames = require('classnames'),
-    Table = require('./Table'),
     Customer = require('./Customer'),
     accounting = require('accounting'),
     Immutable = require('immutable'),
     Alert = require('./Alert'),
     Spinner = require('react-spinkit'),
-    {ButtonToolbar, Button, Row, Col, Pager, PageItem} = require('react-bootstrap'), 
+    {Table, ButtonToolbar, Button, Row, Col, Pager, PageItem} = require('react-bootstrap'), 
     _ = require('underscore');
+    
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 var pageSize = 30;
 
@@ -25,13 +26,14 @@ module.exports = React.createClass({
             nextState.isSubmitting !== this.state.isSubmitting ||
             nextState.loading !== this.state.loading ||
             nextState.previous !== this.state.previous ||
-            nextState.next !== this.state.next
+            nextState.next !== this.state.next ||
+            nextState.totalCount !== this.state.totalCount
         );
     },
     
-    _getCustomerData(offset) {
+    _getCustomerData(offset, getCount) {
         this.setState({loading: true});
-        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset},function(err, data) {
+        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset, count: getCount},function(err, data) {
             if (this.isMounted()) {
                 if (err) {
                     console.log('customer Data Error:', err);
@@ -40,6 +42,7 @@ module.exports = React.createClass({
                     console.log('customer data returned'); 
                     var customerList = this.state.customers;
                     this.setState({
+                        totalCount: data.totalCount ? data.totalCount : this.state.totalCount,
                         loading: false,
                         invoices: Immutable.Map(data.Invoice),
                         customers: Immutable.List(data.Customer),//customerList.merge(customers),
@@ -52,7 +55,8 @@ module.exports = React.createClass({
     },
     
     componentDidMount() {
-        this._getCustomerData(1);
+        window.PAY = this.state.payments;
+        this._getCustomerData(1, true);
     },
     
     _updatePayments(customerId, invoices) {
@@ -85,9 +89,9 @@ module.exports = React.createClass({
                         strong: 'Success! '
                     },
                     isSubmitting: false,
-                    payments: null
+                    payments: this.state.payments.clear() 
                 });
-                this._getCustomerData(1); 
+                this._getCustomerData(1, true); 
             }
         }.bind(this)); 
     },
@@ -101,7 +105,13 @@ module.exports = React.createClass({
         this.setState({payments: this.state.payments.clear()})  
     },
     
+    _navigate(offset) {
+        console.log('pageItem clicked');
+        this._getCustomerData(offset);
+    },
+    
     render() {
+        window.COUNT = this.state.totalCount;
         console.log('Customers: render');
         var alert = this.state.alert;
         var alertDiv = alert ?
@@ -126,6 +136,17 @@ module.exports = React.createClass({
                             <Spinner spinnerName='three-bounce' />
                         </Button> : 
                         null;
+        var pages = this.state.totalCount ? 
+            <nav>
+                <ul className="pagination">
+                    {_(Math.floor(this.state.totalCount / pageSize) + this.state.totalCount % pageSize).times(function(i) {
+                        var offset = i * pageSize + 1; 
+                        return <li key={i}><a href="#" onClick={this._navigate.bind(null, offset)}>{i + 1}</a></li>;
+                    }, this)}
+                </ul>
+            </nav> :
+            null;
+        window.PAGES = pages;
         return(
             <div className="col-lg-9">
             <div className="row">
@@ -140,16 +161,26 @@ module.exports = React.createClass({
             </div>
             <Row>
                 <Col md={6} mdOffset={4}>
+                    {pages}
                     <Pager>
-                        <PageItem previous disabled={!this.state.previous} onClick={this.state.previous ? this._getCustomerData.bind(null, this.state.previous) : null}>&larr; Previous Page</PageItem>
-                        <PageItem next disabled={!this.state.next} onClick={this.state.next ? this._getCustomerData.bind(null, this.state.next) : null}>Next Page &rarr;</PageItem> 
+                        <PageItem previous disabled={!this.state.previous || this.state.loading} onSelect={this._navigate.bind(null, this.state.previous)}>&larr; Previous Page</PageItem>
+                        <PageItem next disabled={!this.state.next || this.state.loading} onSelect={this._navigate.bind(null, this.state.next)}>Next Page &rarr;</PageItem> 
                     </Pager> 
                 </Col>
             </Row>
             <div className="row">
             
-            <Table headings={['Address','Customer', 'Open Balance', 'Invoices']}>
-                {custs}
+            <Table>
+                <thead>
+                    <tr>
+                       {_.map(['Address','Customer', 'Open Balance', 'Invoices'], (h, i) => {
+                            return <th key={i}>{h}</th>; 
+                       })} 
+                    </tr>
+                </thead>
+                <ReactCSSTransitionGroup transitionName="tenants" component="tbody">
+                    {custs}
+                </ReactCSSTransitionGroup>
             </Table>
             </div>
             </div>

@@ -2,6 +2,7 @@ var accounting = require('accounting');
 var _ = require('underscore');
 var Invoices = require('./Invoices');
 var {Button} = require('react-bootstrap');
+var Spinner = require('react-spinkit');
     
 
 module.exports = React.createClass({
