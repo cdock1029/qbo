@@ -13,6 +13,8 @@ var Hapi = require('hapi'),
     QuickBooks = require('node-quickbooks');
 var Q = require('q');
 var Parse = require('parse').Parse;
+var React = require('react');
+var CompanyDropdownButton = React.createFactory(require('./lib/components/CompanyDropdownButton'));
     
     /* Server params */ 
 var PORT = process.env.PORT,
@@ -72,7 +74,8 @@ server.register([AuthCookie/*, { register: require('crumb'), options: { cookieOp
         cookie: 'user',
         isSecure: true,
         redirectTo: '/login',
-        clearInvalid: true
+        clearInvalid: true,
+        ttl: 4*60*60*1000
     });
     
     server.auth.default('user');
@@ -130,8 +133,9 @@ server.route([
         path: '/',
         config: {
             handler: (request, reply) => {
-                var session = request.auth.credentials;
-                var ctx = {companies: session.companies};
+                var companies = request.auth.credentials.companies;
+                var companySelectForm = React.renderToStaticMarkup(CompanyDropdownButton({ companies: companies }));
+                var ctx = {companies: companies, companySelectForm: companySelectForm};
                 return reply.view('main.html', ctx);
             }
         }
@@ -152,35 +156,36 @@ server.route([
                     {field: 'Balance', value: 0, operator: '>'}
                 ];
                 
-                getCount(qbo.findCustomers, qbo, request.query.count, queryParams)
-                .then((count) => {
-                qbo.findCustomers(queryParams, (err, response) => {
-                    var customerInvoiceMap = {};
-                    if (err) {
-                        return reply(err);
-                    } else {
-                        var batches = _.map(response.QueryResponse.Customer, (customer, index) => {
-                            return {
-                                bId: customer.Id,
-                                Query: ("select * from Invoice where CustomerRef = '" + customer.Id + "' and Balance > '0'")
-                            }; 
-                        });
-                        
-                        qbo.batch(batches, (err, result) => {
-                            if (err) {
-                                return reply(err); 
-                            } else {
-                                _.each(result.BatchItemResponse, (item, index) => {
-                                    customerInvoiceMap[item.bId] = item.QueryResponse.Invoice;
-                                });
-                                response.QueryResponse.Invoice = customerInvoiceMap;
-                                response.QueryResponse.totalCount = count; 
-                                return reply(response); 
-                            }
-                        });
-                        //return reply(customers); 
-                    }     
-                });
+                getCount(qbo.findCustomers, qbo, request.query.count, queryParams).then((count) => {
+                    
+                    qbo.findCustomers(queryParams, (err, response) => {
+                        var customerInvoiceMap = {};
+                        if (err) {
+                            return reply(err);
+                        } else {
+                            var batches = _.map(response.QueryResponse.Customer, (customer, index) => {
+                                return {
+                                    bId: customer.Id,
+                                    Query: ("select * from Invoice where CustomerRef = '" + customer.Id + "' and Balance > '0'")
+                                }; 
+                            });
+                            
+                            qbo.batch(batches, (err, result) => {
+                                if (err) {
+                                    return reply(err); 
+                                } else {
+                                    _.each(result.BatchItemResponse, (item, index) => {
+                                        customerInvoiceMap[item.bId] = item.QueryResponse.Invoice;
+                                    });
+                                    response.QueryResponse.Invoice = customerInvoiceMap;
+                                    response.QueryResponse.totalCount = count; 
+                                    return reply(response); 
+                                }
+                            });
+                            //return reply(customers); 
+                        }     
+                    });
+                    
                 }, (promiseError) => {
                     console.error(promiseError);
                     return reply(promiseError);
@@ -195,13 +200,23 @@ server.route([
             handler: (request, reply) => {
                 var qbo = QBO(_.findWhere(request.auth.credentials.companies, {isSelected: true}));
                 
-                qbo.findCustomers({count: true}, function(err, result) {
+                qbo.batch([
+                    { bId: 'bId1', Query: "select * from Invoice where CustomerRef = '71' and Balance > '0'; select * from Invoice where CustomerRef = '105' and Balance > '0'" } 
+                ], (err, result) => {
+                    if (err) {
+                        return reply(err);
+                    } else {
+                        return reply(result);
+                    }  
+                });
+                
+                /*qbo.findCustomers({count: true}, function(err, result) {
                     if (err) {
                         return reply(err);
                     } else {
                         return reply(result);
                     }
-                });
+                });*/
             }
         }
     },
@@ -609,7 +624,7 @@ server.register(
 
 var getCount = (fn, qbo, countParam, queryParams) => {    
     var deferred = Q.defer();
-    var combined = _.union([{field: 'count', value: true, operator: '='}], queryParams);
+    var combined = _.union([{count: true}], queryParams);
     if (countParam) {
         fn.call(qbo, combined, (e, result) => {
             if (e) {

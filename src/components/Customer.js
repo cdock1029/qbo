@@ -23,12 +23,13 @@ module.exports = React.createClass({
     
     render() {
         var customer = this.props.customer;
+        var key = this.props.count;
         var cells = [
             {content: customer.CompanyName},
-            {content: customer.DisplayName},
-            {content: this.props.isSubmitting ? <Spinner spinnerName='double-bounce' /> : <Button bsStyle={this.props.selected ? 'success' : 'default'} bsSize="large" onClick={this._handleChange}>{accounting.formatMoney(customer.Balance)}</Button>},
+            {content: <p>{customer.DisplayName}</p>},
             /*{content: this.state.isLoading ? <Spinner spinnerName='three-bounce' /> : <Invoices invoices={customer.invoices} expanded={this.props.expanded} />}*/
-            {content: <Invoices invoices={this.props.invoices} expanded={this.props.expanded} />}
+            {content: <Invoices invoices={this.props.invoices} expanded={this.props.expanded} />},
+            {content: this.props.isSubmitting ? <Spinner spinnerName='double-bounce' /> : <Button bsStyle={this.props.selected ? 'success' : 'default'} bsSize="large" onClick={this._handleChange}>{accounting.formatMoney(customer.Balance)}</Button>}
         ];
         return(
             <tr>

@@ -55,7 +55,7 @@ module.exports = React.createClass({
     },
     
     componentDidMount() {
-        window.PAY = this.state.payments;
+        //window.PAY = this.state.payments;
         this._getCustomerData(1, true);
     },
     
@@ -124,6 +124,7 @@ module.exports = React.createClass({
             return <Customer 
                     customer={c} 
                     invoices={this.state.invoices.get(c.Id)}
+                    count={index + 1}
                     key={index} 
                     callback={this._updatePayments} 
                     selected={selected} 
@@ -136,17 +137,44 @@ module.exports = React.createClass({
                             <Spinner spinnerName='three-bounce' />
                         </Button> : 
                         null;
-        var pages = this.state.totalCount ? 
-            <nav>
-                <ul className="pagination">
-                    {_(Math.floor(this.state.totalCount / pageSize) + this.state.totalCount % pageSize).times(function(i) {
+        var pages = null;
+        if (this.state.totalCount) {
+            var numPages = Math.floor(this.state.totalCount / pageSize) + (this.state.totalCount % pageSize > 0 ? 1 : 0);
+            var pageElements = _(numPages).times(function(i) {
+                
                         var offset = i * pageSize + 1; 
-                        return <li key={i}><a href="#" onClick={this._navigate.bind(null, offset)}>{i + 1}</a></li>;
-                    }, this)}
+                        var classes;
+                        if (this.state.previous && this.state.next) {
+                            classes = classnames({
+                                active: (this.state.previous < offset &&  offset < this.state.next),
+                                disabled: this.state.loading
+                            }); 
+                        } else if (this.state.previous) {
+                            classes = classnames({
+                                active: i === (numPages - 1)
+                            });
+                        } else {
+                            classes = classnames({
+                                active: i === 0
+                            });
+                        }
+                        
+                        return <li className={classes} key={i}><a href={'#' + offset} onClick={this._navigate.bind(null, offset)}>{i + 1}</a></li>;
+                    }, this);
+            var nextClass = classnames({ disabled: !this.state.next || this.state.loading });
+            var prevClass = classnames({ disabled: !this.state.previous || this.state.loading });
+            pageElements.unshift(
+                 <li className={prevClass} key={'prev'}><a href={'#' + this.state.previous} onClick={this.state.previous && !this.state.loading ? this._navigate.bind(null, this.state.previous): null}>&larr; Previous</a></li>
+            );
+            pageElements.push(
+                 <li className={nextClass} key={'next'}><a href={'#' + this.state.next} onClick={this.state.next && !this.state.loading ? this._navigate.bind(null, this.state.next): null}>Next &rarr;</a></li>
+            );
+            pages = <nav>
+                <ul className="pagination">
+                    {pageElements}
                 </ul>
-            </nav> :
-            null;
-        window.PAGES = pages;
+            </nav>;
+        }                 
         return(
             <div className="col-lg-9">
             <div className="row">
@@ -160,20 +188,16 @@ module.exports = React.createClass({
                 </div>
             </div>
             <Row>
-                <Col md={6} mdOffset={4}>
+                <Col md={6} mdOffset={6}>
                     {pages}
-                    <Pager>
-                        <PageItem previous disabled={!this.state.previous || this.state.loading} onSelect={this._navigate.bind(null, this.state.previous)}>&larr; Previous Page</PageItem>
-                        <PageItem next disabled={!this.state.next || this.state.loading} onSelect={this._navigate.bind(null, this.state.next)}>Next Page &rarr;</PageItem> 
-                    </Pager> 
                 </Col>
             </Row>
             <div className="row">
             
-            <Table>
+            <Table condensed>
                 <thead>
                     <tr>
-                       {_.map(['Address','Customer', 'Open Balance', 'Invoices'], (h, i) => {
+                       {_.map(['Address','Customer', 'Invoices', 'Open Balance'], (h, i) => {
                             return <th key={i}>{h}</th>; 
                        })} 
                     </tr>

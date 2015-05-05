@@ -27,10 +27,9 @@ var Invoices = React.createClass({
                             marginRight: '2px'
                         }; 
                         var header = [
-                            <span key="0" className="pull-right">
-                                <small>{descriptionLabel}</small> 
-                            </span>,
-                            <h5 key="1">{moment(invoice.TxnDate).format('MMM Do, YYYY') + '   '}<span className="label label-default" style={style}>{accounting.formatMoney(invoice.Balance)}</span></h5>
+                            <small key="0" className="pull-right">{descriptionLabel}</small>,
+                            <span key="1">{moment(invoice.TxnDate).format('MMM Do, YYYY') + '  '}</span>,
+                            <span key="3" className="label label-default" style={style}>{accounting.formatMoney(invoice.Balance)}</span>
                         ];    
                             
                         var listGroupItems = _(lines).map((line, i) => {
