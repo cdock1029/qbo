@@ -6,8 +6,12 @@ var Qs = require('qs');
 module.exports = {
     getCustomers(query, cb) {
         
-        $.ajax('/customers?' + Qs.stringify(query)).done((data) => {
+        $.ajax('/customers?' + Qs.stringify(query)).done( data => {
+            
             cb(null, data.QueryResponse);//array of customers 
+            
+        }).fail((jqXHR, textStatus, errorThrown) => {
+            cb(errorThrown, null); 
         });
         
     },

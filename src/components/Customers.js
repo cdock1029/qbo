@@ -11,7 +11,7 @@ var Data = require('../flux/Data'),
     
 var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
-var pageSize = 30;
+var pageSize = 100;
 
 module.exports = React.createClass({
     getInitialState() {
@@ -37,7 +37,7 @@ module.exports = React.createClass({
             if (this.isMounted()) {
                 if (err) {
                     console.log('customer Data Error:', err);
-                    this.setState({ alert: {className: 'alert alert-danger', message: err} })   
+                    this.setState({ alert: {className: 'alert alert-danger', message: err, loading: false} })   
                 } else {
                     console.log('customer data returned'); 
                     var customerList = this.state.customers;
@@ -111,7 +111,6 @@ module.exports = React.createClass({
     },
     
     render() {
-        window.COUNT = this.state.totalCount;
         console.log('Customers: render');
         var alert = this.state.alert;
         var alertDiv = alert ?
@@ -180,9 +179,9 @@ module.exports = React.createClass({
             <div className="row">
                 <div className="col-md-6 col-md-offset-6">
                     <ButtonToolbar>
-                        <Button bsStyle="success" onClick={this._submitPayments} disabled={this.state.payments.size < 1}>Pay Selected</Button> 
-                        <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
                         <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.state.payments.size < 1}>Deselect All</Button> 
+                        <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
+                        <Button bsStyle="success" onClick={this._submitPayments} disabled={this.state.payments.size < 1}>Pay Selected</Button> 
                         {spinner} 
                     </ButtonToolbar>
                 </div>

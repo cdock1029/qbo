@@ -51,6 +51,7 @@
                 var value = $('.companyItems').index(this);
                 
                 $('<form action="/company" method="post"></form>')
+                    .append($('<input name="crumb" value="{{crumb}}"></input>'))
                     .append($('<input name="company"></input>').val(value))
                     .appendTo('body')
                     .submit();

@@ -1,3 +1,5 @@
+"use strict";
+
 var Hapi = require('hapi'),
     //Hoek = require('hoek'),
     //Wreck = require('wreck'),
@@ -9,22 +11,24 @@ var Hapi = require('hapi'),
     Qs = require('qs'),
     
     Handlebars = require('handlebars'),
-    Boom = require('boom'),
-    QuickBooks = require('node-quickbooks');
+    Boom = require('boom');
+    
 var Q = require('q');
 var Parse = require('parse').Parse;
 var React = require('react');
 var CompanyDropdownButton = React.createFactory(require('./lib/components/CompanyDropdownButton'));
-    
+
+const BATCH_SIZE = 25;
+const SANDBOX = false;   
     /* Server params */ 
-var PORT = process.env.PORT,
+const PORT = process.env.PORT,
     IP = process.env.IP,
     C9_HOSTNAME = process.env.C9_HOSTNAME,
     
     /* App configuration */
     //Quickbooks
-    CONSUMER_KEY = process.env.CONSUMER_KEY,
-    CONSUMER_SECRET = process.env.CONSUMER_SECRET,
+    CONSUMER_KEY = SANDBOX ? process.env.DEV_CONSUMER_KEY : process.env.CONSUMER_KEY,
+    CONSUMER_SECRET = SANDBOX ? process.env.DEV_CONSUMER_SECRET : process.env.CONSUMER_SECRET,
     
     FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID, 
     FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET,
@@ -51,15 +55,9 @@ var PORT = process.env.PORT,
     
 Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
 
+var QBO = require('./lib/QBO').init(CONSUMER_KEY, CONSUMER_SECRET, false/*useSandbox*/, true/*useDebug*/);
+
 var server = new Hapi.Server();//{
-/*    connections: {
-        routes: {
-            files: {
-                relativeTo: Path.join(__dirname, './')
-            }
-        }
-    }
-});*/
 
 server.connection({ host: C9_HOSTNAME, address: IP, port: PORT});
 
@@ -94,39 +92,6 @@ server.route([
                 }
             }
         }
-    },{
-        method: ['GET','POST'],
-        path: '/companies',
-        config: {
-            handler: (request, reply) => {
-                
-                if (request.method === 'post') {
-                    var Parse = request.pre.Parse,
-                        Company = Parse.Object.extend('Company'),
-                        query = new Parse.Query(Company);
-                        
-                    query.get(request.payload.company, {
-                        success: function(company) {
-                            var qboObj = {};
-                            qboObj.realmId = company.get('realmId');
-                            qboObj.oauthToken = company.get('oauthToken');
-                            qboObj.oauthTokenSecret = company.get('oauthTokenSecret');
-                            qboObj.name = company.get('name'); 
-                           
-                            request.session.set(QBO_SESSION_KEY, qboObj); 
-                            
-                            return reply.redirect('/');
-                        },
-                        error: function(object, err) {
-                            return reply(err);
-                        }
-                    });
-                    
-                } else {
-                    return reply.view('companies.html', {companies: request.pre.companies}); 
-                }
-            }
-        } 
     },
     {
         method: 'GET',
@@ -163,26 +128,36 @@ server.route([
                         if (err) {
                             return reply(err);
                         } else {
-                            var batches = _.map(response.QueryResponse.Customer, (customer, index) => {
-                                return {
-                                    bId: customer.Id,
-                                    Query: ("select * from Invoice where CustomerRef = '" + customer.Id + "' and Balance > '0'")
-                                }; 
-                            });
-                            
-                            qbo.batch(batches, (err, result) => {
-                                if (err) {
-                                    return reply(err); 
-                                } else {
-                                    _.each(result.BatchItemResponse, (item, index) => {
+                            var customers = response.QueryResponse.Customer;
+                            var promises = [];
+                            _(Math.ceil(customers.length / BATCH_SIZE)).times( i => {
+                                
+                                var segment = customers.slice(i*BATCH_SIZE, i*BATCH_SIZE + BATCH_SIZE);
+                                var batches = _.map(segment, (customer, index) => {
+                                    return {
+                                        bId: customer.Id,
+                                        Query: ("select * from Invoice where CustomerRef = '" + customer.Id + "' and Balance > '0'")
+                                    }; 
+                                });
+                                
+                                promises.push(batchPromise(qbo, batches));
+                                
+                            }); 
+                            Q.all(promises).done( results => {
+                                
+                                _.each(results, (result, i) => {
+                                    _.each(result.BatchItemResponse, (item, j) => {
                                         customerInvoiceMap[item.bId] = item.QueryResponse.Invoice;
                                     });
-                                    response.QueryResponse.Invoice = customerInvoiceMap;
-                                    response.QueryResponse.totalCount = count; 
-                                    return reply(response); 
-                                }
+                                });
+                                
+                                response.QueryResponse.Invoice = customerInvoiceMap;
+                                response.QueryResponse.totalCount = count; 
+                                return reply(response);
+                                
+                            }, err => {
+                                return reply(err); 
                             });
-                            //return reply(customers); 
                         }     
                     });
                     
@@ -190,33 +165,6 @@ server.route([
                     console.error(promiseError);
                     return reply(promiseError);
                 });
-            }
-        }
-    },
-    {
-        method: 'GET',
-        path: '/count',
-        config: {
-            handler: (request, reply) => {
-                var qbo = QBO(_.findWhere(request.auth.credentials.companies, {isSelected: true}));
-                
-                qbo.batch([
-                    { bId: 'bId1', Query: "select * from Invoice where CustomerRef = '71' and Balance > '0'; select * from Invoice where CustomerRef = '105' and Balance > '0'" } 
-                ], (err, result) => {
-                    if (err) {
-                        return reply(err);
-                    } else {
-                        return reply(result);
-                    }  
-                });
-                
-                /*qbo.findCustomers({count: true}, function(err, result) {
-                    if (err) {
-                        return reply(err);
-                    } else {
-                        return reply(result);
-                    }
-                });*/
             }
         }
     },
@@ -229,95 +177,33 @@ server.route([
                 var qbo = QBO(_.findWhere(request.auth.credentials.companies, {isSelected: true}));
                 
                 var data = request.payload.payments;
-                
-                var batchId = 1; 
+               
                 var items = _.map(data, function(value, key) {
                     if (value) {
                         var customerId = value.customerId;
                         var invoices = value.invoices;
                          
                         return {
-                            bId: batchId++,
+                            bId: customerId,
                             operation: 'create',
                             Payment: createPaymentForCustomer(customerId, invoices)
                         };
                     }
                 });
                 
-                console.log('batchItemRequest: ', items);
-                qbo.batch(items, function(err, result) {
-                    if (err) {
-                        return reply(err);
-                    } else {
-                        return reply(result);
-                    }
+                var promises = []; 
+                _(Math.ceil(items.length / BATCH_SIZE)).times( i => {
+                    var section = items.slice(i * BATCH_SIZE, i * BATCH_SIZE + BATCH_SIZE); 
+                    promises.push(batchPromise(qbo, section));
+                    
+                    Q.all(promises).done( results => {
+                        var merged = _.union(results);
+                        return reply(merged);
+                    }, err => {
+                        return reply(err); 
+                    });
                 });
             }
-        }
-    },
-    {
-        method: ['GET', 'POST'],
-        path: '/update',
-        config: {
-            handler: (request, reply) => {
-                
-                var qboSession = request.session.get(QBO_SESSION_KEY);
-                var qbo = QBO(qboSession[QBO_TOKEN], qboSession[QBO_TOKEN_SECRET], qboSession[QBO_REALM_ID]);
-                qbo.findInvoices([
-                    { field: 'asc', value: 'DocNumber' },
-                    { field: 'limit', value: parseInt(request.query.limit, 10) },
-                    { field: 'offset', value: parseInt(request.query.offset, 10) },
-                    { field: 'SalesTermRef', value: '3', operator: '='}], 
-                    
-                    (err, invoices) => {
-                        
-                    if (err) {
-                        return reply(err);
-                    }
-                    var updates = [];
-                    var updateString = 'Westchester Commons';
-                    //return reply(invoices); 
-                    
-                    /*customers.QueryResponse.Customer.forEach((entity, i, arr) => {
-                        console.info(entity); 
-                        if (entity.CompanyName.indexOf(updateString) === -1) {
-                            entity.CompanyName = updateString + ' ' + entity.CompanyName;
-                            updates.push({
-                                bId: 'bid' + i,
-                                operation: 'update',
-                                Customer: entity
-                            }); 
-                        }
-                    });*/
-                    invoices.QueryResponse.Invoice.forEach((entity, i, arr) => {
-                        console.info(entity); 
-                        //if (! entity.hasOwnProperty('DepartmentRef')) {
-                            /*entity.DepartmentRef = {};
-                            entity.DepartmentRef.name = updateString;
-                            entity.DepartmentRef.value = '1';*/
-                            
-                            entity.SalesTermRef.value = '5';
-                            entity.DueDate = entity.TxnDate;
-                            updates.push({
-                                bId: 'bid' + i,
-                                operation: 'update',
-                                Invoice: entity
-                            }); 
-                        //}
-                        
-                        
-                    }); 
-                    
-                    qbo.batch(updates, (err, response) => {
-                        
-                        if (err) {
-                            return reply(err);
-                        } else {
-                            return reply(response);
-                        }
-                    });
-                });  
-            } 
         }
     },
     {
@@ -367,7 +253,7 @@ server.route([
                                 var relation = privateUserData.relation("companies")
                                 return relation.query().find();
                             }).then(function(companies) {
-                                console.log('COMPANIES',companies);
+                                //console.log('COMPANIES',companies);
                                 var sorted = sortAndSetCompanies(companies);
                                 var session = {
                                     user: { id: user.id, email: user.get('email'), username: user.get('username'), token: user.getSessionToken() },
@@ -446,104 +332,110 @@ server.route([
         method: 'GET',
         path: '/oauth/requestToken',
         config: {
-        handler: (request, reply) => {
-            
-            var postBody = {
-                url: QuickBooks.REQUEST_TOKEN_URL,
-                oauth: {
-                    callback: 'https://' + C9_HOSTNAME + '/oauth/callback',
-                    consumer_key: CONSUMER_KEY,
-                    consumer_secret: CONSUMER_SECRET
-                }
-            };
-            Request.post(postBody, (e, r, data) => {
-                var requestToken = Qs.parse(data);
-                console.info('after post to QBO Reuqest token url.\nRequest Token: ');
-                console.info(requestToken);
-                request.session.set(QBO_TOKEN_SECRET, requestToken.oauth_token_secret);
-                reply.redirect(QuickBooks.APP_CENTER_URL + requestToken.oauth_token);
-            });
-            
+            handler: (request, reply) => {
+                
+                var postBody = {
+                    url: QBO.REQUEST_TOKEN_URL,
+                    oauth: {
+                        callback: 'https://' + C9_HOSTNAME + '/oauth/callback',
+                        consumer_key: CONSUMER_KEY,
+                        consumer_secret: CONSUMER_SECRET
+                    }
+                };
+                Request.post(postBody, (e, r, data) => {
+                    var requestToken = Qs.parse(data);
+                    //console.info('after post to QBO Reuqest token url.\nRequest Token: ');
+                    //console.info(requestToken);
+                    request.session.set(QBO_TOKEN_SECRET, requestToken.oauth_token_secret);
+                    reply.redirect(QBO.APP_CENTER_URL + requestToken.oauth_token);
+                });
+                
+            }
         }
-    }
     },
     {
-    method: 'GET',
-    path: '/oauth/callback',
-    config: {
-    handler: (request, reply) => {
+        method: 'GET',
+        path: '/oauth/callback',
+        config: {
+            handler: (request, reply) => {
+                
+                var postBody = {
+                    url: QBO.ACCESS_TOKEN_URL,
+                    oauth: {
+                        consumer_key: CONSUMER_KEY,
+                        consumer_secret: CONSUMER_SECRET,
+                        token: request.query.oauth_token,
+                        token_secret: request.session.get(QBO_TOKEN_SECRET),
+                        verifier: request.query.oauth_verifier,
+                        realmId: request.query.realmId
+                    }
+                };
+                request.session.clear(QBO_TOKEN_SECRET);
+                Request.post(postBody, (e, r, data) => {
+                    
+                    var accessToken = Qs.parse(data);
+                    var realmId = postBody.oauth.realmId;
+                    var oauthToken = accessToken.oauth_token;
+                    var oauthTokenSecret = accessToken.oauth_token_secret;
+                    
+                    var qbo = QBO({oauthToken: oauthToken, oauthTokenSecret: oauthTokenSecret, realmId: realmId});
+                    
+                    qbo.getCompanyInfo(realmId, (err, companyInfo) => {
+                        
+                        if (err) {
+                            return reply(err);
+                        } else {
+                            var token = request.auth.credentials.user.token;
+                            var user;// = Parse.User.current();
+                            var pud;
+                            
+                            Parse.User.become(token).then( u => { 
+                                
+                                user = Parse.User.current();
+                                return user.get('privateUserData').fetch();
+                                
+                            }).then( privateUserData => {
+                                    
+                                    pud = privateUserData;
+                                    
+                                    var Company = Parse.Object.extend('Company');
+                                    var company = new Company();
+                                    company.setACL(new Parse.ACL(user));
+                                    
+                                    company.set('name', companyInfo.CompanyName); 
+                                    company.set('oauthToken', oauthToken);
+                                    company.set('oauthTokenSecret', oauthTokenSecret);
+                                    company.set('realmId', realmId);
+                                    return company.save(); 
+                                    
+                            }).then( company => {
+                                    
+                                    var relation = pud.relation("companies");
+                            
+                                    relation.add(company); 
+                                    return pud.save();
+                        
+                            }).then( privateUserData => {
+                    
+                                    var relation = privateUserData.relation("companies");
+                                    return relation.query().find();
         
-        var postBody = {
-            url: QuickBooks.ACCESS_TOKEN_URL,
-            oauth: {
-                consumer_key: CONSUMER_KEY,
-                consumer_secret: CONSUMER_SECRET,
-                token: request.query.oauth_token,
-                token_secret: request.session.get(QBO_TOKEN_SECRET),
-                verifier: request.query.oauth_verifier,
-                realmId: request.query.realmId
-            }
-        };
-        request.session.clear(QBO_TOKEN_SECRET);
-        Request.post(postBody, (e, r, data) => {
-            
-            var accessToken = Qs.parse(data);
-            var realmId = postBody.oauth.realmId;
-            var oauthToken = accessToken.oauth_token;
-            var oauthTokenSecret = accessToken.oauth_token_secret;
-            
-            var qbo = QBO({oauthToken: oauthToken, oauthTokenSecret: oauthTokenSecret, realmId: realmId});
-            
-            qbo.getCompanyInfo(realmId, (err, companyInfo) => {
-                
-                if (err) {
-                    return reply(err);
-                } else {
-                    //var token = request.auth.credentials.user.token;
-                    var user = Parse.User.current();
-                    var pud;
-                    
-                    user.get('privateUserData').fetch().then( privateUserData => {
-                            
-                            pud = privateUserData;
-                            
-                            var Company = Parse.Object.extend('Company');
-                            var company = new Company();
-                            company.setACL(new Parse.ACL(user));
-                            
-                            company.set('name', companyInfo.CompanyName); 
-                            company.set('oauthToken', oauthToken);
-                            company.set('oauthTokenSecret', oauthTokenSecret);
-                            company.set('realmId', realmId);
-                            return company.save(); 
-                            
-                    }).then( company => {
-                            
-                            var relation = pud.relation("companies");
-                    
-                            relation.add(company); 
-                            return pud.save();
-                
-                    }).then( privateUserData => {
-            
-                            var relation = privateUserData.relation("companies");
-                            return relation.query().find();
-
-                    }).then( companies => {
-                            
-                            request.auth.session.set('companies', sortAndSetCompanies(companies));     
-                            return reply.redirect('/close');
-                            
-                    }, err => {
-                            //error creating / saving company
-                            Parse.User.logOut();
-                            return reply(err); 
+                            }).then( companies => {
+                                    
+                                    request.auth.session.set('companies', sortAndSetCompanies(companies));     
+                                    return reply.redirect('/close');
+                                    
+                            }, err => {
+                                    //error creating / saving company
+                                    //Parse.User.logOut();
+                                    return reply(err); 
+                            });
+                        }        
                     });
-                }        
-            });
-        });
-    }}
-}, 
+                });
+            }
+        }
+    }, 
     {
         method: 'POST',
         path: '/company',
@@ -561,17 +453,17 @@ server.route([
         }
     },
     {
-    method: 'GET',
-    path: '/close',
-    config: {
-        handler: (request, reply) => {
-            
-            reply.view('close.html');      
-            
+        method: 'GET',
+        path: '/close',
+        config: {
+            handler: (request, reply) => {
+                
+                reply.view('close.html');      
+                
+            }
         }
-    }
-    
-}]);
+    }]
+);
 
 server.views({
     engines: {
@@ -583,7 +475,7 @@ server.views({
     helpersPath: 'src/views/helpers',
     context: {
         grantUrl: 'https://' + C9_HOSTNAME + '/oauth/requestToken',
-        appCenter: QuickBooks.APP_CENTER_BASE
+        appCenter: QBO.APP_CENTER_BASE
     }
 });
 
@@ -614,7 +506,7 @@ server.register(
             return process.exit(1);
         } else {
             server.start(() => {
-                console.info('consumer key: ' + CONSUMER_KEY + ', consumer secret: ' + CONSUMER_SECRET);
+                //console.info('consumer key: ' + CONSUMER_KEY + ', consumer secret: ' + CONSUMER_SECRET);
                 console.info('server started @ ' + IP + ':' + PORT + '\naccess @ ' + C9_HOSTNAME);
             });
         } 
@@ -639,15 +531,31 @@ var getCount = (fn, qbo, countParam, queryParams) => {
     return deferred.promise;
 };
 
-var sortAndSetCompanies = (companies) => {
-    var sorted = _.sortBy(companies, (c) => {return c.get('name')});
-    sorted[1].set('isSelected', true);
-    return sorted;
+var batchPromise = (qbo, items) => {
+    
+    var deferred = Q.defer();
+    qbo.batch(items, (err, result) => {
+        if (err) {
+            deferred.reject(err); 
+        } else {
+            deferred.resolve(result);     
+        }
+    });
+    
+    return deferred.promise;
 };
 
-var QBO = (company) => {
-    return new QuickBooks(CONSUMER_KEY, CONSUMER_SECRET, /*process.env.TOKEN_3*/company.oauthToken, /*process.env.TOKEN_SECRET_3*/ company.oauthTokenSecret, /*process.env.REALM_3*/ company.realmId, false/*use sandbox*/, true/*turn debugging on*/); 
-    
+var sortAndSetCompanies = (companies) => {
+    var sorted;
+    if (SANDBOX) {
+        sorted = _.filter(companies, c => {
+            return c.get('name').toLowerCase().includes('sandbox');
+        }); 
+    } else {
+        sorted = _.sortBy(companies, (c) => {return c.get('name')});
+    }
+    sorted[0].set('isSelected', true);
+    return sorted;
 };
 
 var createPaymentForCustomer = function(customerId, invoices) {
