@@ -1,21 +1,19 @@
 "use strict";
 
-var Hapi = require('hapi'),
+var Hapi = require('hapi');
     //Hoek = require('hoek'),
     //Wreck = require('wreck'),
-    AuthCookie = require('hapi-auth-cookie'),
-    Yar = require('yar'),
+var AuthCookie = require('hapi-auth-cookie');
+var Yar = require('yar');
     //Bell = require('bell'),
-    _ = require('underscore'),
-    Request = require('request'),
-    Qs = require('qs'),
-    
-    Handlebars = require('handlebars'),
-    Boom = require('boom');
-    
+var _ = require('underscore');
+var Request = require('request');
+var Qs = require('qs');
+var Handlebars = require('handlebars');
+var Boom = require('boom');
 var Q = require('q');
-var Parse = require('parse').Parse;
 var React = require('react');
+
 var CompanyDropdownButton = React.createFactory(require('./lib/components/CompanyDropdownButton'));
 
 const BATCH_SIZE = 25;
@@ -45,6 +43,7 @@ const PORT = process.env.PORT,
     
     PARSE_APP_ID = process.env.PARSE_APP_ID,
     PARSE_JS_KEY = process.env.PARSE_JS_KEY,
+    PARSE_REST_KEY = process.env.PARSE_REST_KEY,
    
     /* keys */ 
     QBO_SESSION_KEY = 'qbo',
@@ -53,9 +52,14 @@ const PORT = process.env.PORT,
     QBO_TOKEN_SECRET = 'oauth_token_secret',
     QBO_REALM_ID = 'realm_id';
     
-Parse.initialize(PARSE_APP_ID, PARSE_JS_KEY);
-
-var QBO = require('./lib/QBO').init(CONSUMER_KEY, CONSUMER_SECRET, false/*useSandbox*/, true/*useDebug*/);
+var QBO = require('./lib/utils/QBO').init(CONSUMER_KEY, CONSUMER_SECRET, false/*useSandbox*/, true/*useDebug*/);
+//var Parse = require('node-parse-api').Parse;
+var utils = require('./lib/utils/Utils');
+var Parser = utils.init(PARSE_APP_ID, PARSE_REST_KEY);
+/*var db = new Parse({
+    app_id: PARSE_APP_ID,
+    api_key: PARSE_REST_KEY 
+});*/
 
 var server = new Hapi.Server();//{
 
@@ -245,11 +249,23 @@ server.route([
                     var username = request.payload.username, password = request.payload.password;
                     if (! username || ! password) {
                         return reply.view('login.html', { message: 'Missing username or password'});
-                    } 
-                    Parse.User.logIn(username, password, {
-                        success: (user) => {
+                    }
+                    Parser.privateUserData({username: username, password: password}).fork(function(failure) {
+                        return reply(failure && failure.response && failure.response.body); 
+                    }, function(success) {
+                        
+                        return reply(success) ;
+                    });
+                    /*db.loginUser(username, password).then( user => {
                             
-                            user.get('privateUserData').fetch().then(function(privateUserData) {
+                            db.find('PrivateUserData', {objectId: user.privateUserData.objectId}, function(err, pud) {
+                                if (err) {
+                                    return reply(err); 
+                                } else {
+                                    return reply({user: user, pud: pud});
+                                }
+                            }, user.sessionToken);
+                                user.get('privateUserData').fetch().then(function(privateUserData) {
                                 var relation = privateUserData.relation("companies")
                                 return relation.query().find();
                             }).then(function(companies) {
@@ -268,13 +284,15 @@ server.route([
                             
                             
                         },
-                        error: (user, err) => {
+                        (err) => {
                             //request.session.reset();
-                            return reply.view('login.html', { message: err.message });  
+                            
+                            return reply(err);
+                            //return reply.view('login.html', { message: err.message });  
                         }
-                    });
+                    );*/
                 } else {
-                    if (request.auth.isAuthenticated) {
+                    if (false){//request.auth.isAuthenticated) {
                         return reply.redirect('/');
                     } else {
                         return reply.view('login.html');    
@@ -290,7 +308,7 @@ server.route([
         config: {
             handler: (request, reply) => {
                 
-                Parse.User.logOut(); 
+                //Parse.User.logOut(); 
                 request.auth.session.clear();
                 request.session.reset();
                 reply.redirect('/login');
