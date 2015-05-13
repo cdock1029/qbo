@@ -296,7 +296,7 @@ server.route([
                         return reply(err); 
                     });
                 } else {
-                    if (false){//request.auth.isAuthenticated) {
+                    if (request.auth.isAuthenticated) {
                         return reply.redirect('/');
                     } else {
                         return reply.view('login.html');    
