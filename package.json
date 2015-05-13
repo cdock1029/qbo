@@ -17,7 +17,7 @@
     "immutable": "^3.7.2",
     "moment": "^2.10.2",
     "node-parse-api": "git://github.com/cdock1029/node-parse-api.git",
-    "node-quickbooks": "^1.0.16",
+    "node-quickbooks": "git://github.com/cdock1029/node-quickbooks.git#queried-count",
     "object-assign": "^2.0.0",
     "parse": "^1.4.2",
     "parse-react": "^0.1.4",

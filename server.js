@@ -17,7 +17,7 @@ var React = require('react');
 var CompanyDropdownButton = React.createFactory(require('./lib/components/CompanyDropdownButton'));
 
 const BATCH_SIZE = 25;
-const SANDBOX = false;   
+const SANDBOX = true;   
     /* Server params */ 
 const PORT = process.env.PORT,
     IP = process.env.IP,
@@ -52,14 +52,13 @@ const PORT = process.env.PORT,
     QBO_TOKEN_SECRET = 'oauth_token_secret',
     QBO_REALM_ID = 'realm_id';
     
-var QBO = require('./lib/utils/QBO').init(CONSUMER_KEY, CONSUMER_SECRET, false/*useSandbox*/, true/*useDebug*/);
-//var Parse = require('node-parse-api').Parse;
-var utils = require('./lib/utils/Utils');
-var Parser = utils.init(PARSE_APP_ID, PARSE_REST_KEY);
-/*var db = new Parse({
+var QuickBooks = require('./lib/utils/QBO');
+var QBO = QuickBooks.init(CONSUMER_KEY, CONSUMER_SECRET, SANDBOX/*useSandbox*/, true/*useDebug*/);
+var Parse = require('node-parse-api').Parse;
+var db = new Parse({
     app_id: PARSE_APP_ID,
     api_key: PARSE_REST_KEY 
-});*/
+});
 
 var server = new Hapi.Server();//{
 
@@ -86,14 +85,23 @@ server.register([AuthCookie/*, { register: require('crumb'), options: { cookieOp
 server.route([
     {
         method: 'GET',
-        path: '/src/{param*}',
+        path: '/src/styles/{param*}',
         config: {
             handler: {
                 directory: {
                     path: (request) => {
-                        return 'src'; 
+                        return 'src/styles'; 
                     }
                 }
+            }
+        }
+    },
+    {
+        method: 'GET',
+        path: '/src/bundle.js',
+        config: {
+            handler: {
+                file: './src/bundle.js' 
             }
         }
     },
@@ -250,47 +258,43 @@ server.route([
                     if (! username || ! password) {
                         return reply.view('login.html', { message: 'Missing username or password'});
                     }
-                    Parser.privateUserData({username: username, password: password}).fork(function(failure) {
-                        return reply(failure && failure.response && failure.response.body); 
-                    }, function(success) {
-                        
-                        return reply(success) ;
+                    db.loginUser(username, password).then(function(user) {
+                        var token = user.sessionToken;
+                           
+                        db.find('PrivateUserData', { objectId: user.privateUserData.objectId, keys: 'companies'}, function(err, privateUserData) {
+                            if (err) {
+                                return reply(err);
+                            } else {
+                                db.find('Company', {
+                                    keys: 'name,oauthToken,oauthTokenSecret,realmId',
+                                    order: 'name',
+                                    where: {
+                                        $relatedTo: {
+                                            object: {
+                                                __type: "Pointer",
+                                                className: "PrivateUserData",
+                                                objectId: privateUserData.objectId
+                                            },
+                                            key: "companies"}}}, 
+                                    function(err, companies) {
+                                        if (err) {
+                                            return reply(err); 
+                                        } else {
+                                            var filteredCompanies = filterCompanies(companies.results);
+                                            var session = {
+                                                user: { id: user.objectId, email: user.email, username: user.username, token: token },
+                                                companies: filteredCompanies 
+                                            }; 
+                                            request.auth.session.set(session);
+                                            return reply.redirect('/');
+                                        }    
+                                    }, token);
+                            } 
+                        }, token);
+                             
+                    }, function(err) {
+                        return reply(err); 
                     });
-                    /*db.loginUser(username, password).then( user => {
-                            
-                            db.find('PrivateUserData', {objectId: user.privateUserData.objectId}, function(err, pud) {
-                                if (err) {
-                                    return reply(err); 
-                                } else {
-                                    return reply({user: user, pud: pud});
-                                }
-                            }, user.sessionToken);
-                                user.get('privateUserData').fetch().then(function(privateUserData) {
-                                var relation = privateUserData.relation("companies")
-                                return relation.query().find();
-                            }).then(function(companies) {
-                                //console.log('COMPANIES',companies);
-                                var sorted = sortAndSetCompanies(companies);
-                                var session = {
-                                    user: { id: user.id, email: user.get('email'), username: user.get('username'), token: user.getSessionToken() },
-                                    companies: sorted
-                                }; 
-                                request.auth.session.set(session);
-                                return reply.redirect('/');
-                                //return reply(session);
-                            }, function(err) {
-                                return reply.view('login.html', { message: err.message });    
-                            });
-                            
-                            
-                        },
-                        (err) => {
-                            //request.session.reset();
-                            
-                            return reply(err);
-                            //return reply.view('login.html', { message: err.message });  
-                        }
-                    );*/
                 } else {
                     if (false){//request.auth.isAuthenticated) {
                         return reply.redirect('/');
@@ -308,11 +312,22 @@ server.route([
         config: {
             handler: (request, reply) => {
                 
-                //Parse.User.logOut(); 
-                request.auth.session.clear();
-                request.session.reset();
-                reply.redirect('/login');
-                
+                var session = request.auth.credentials; 
+                if (session.user && session.user.token) {
+                    db.logout(session.user.token, function(err, success) {
+                        request.auth.session.clear();
+                        request.session.reset();
+                        if (err) {
+                            return reply(err);    
+                        } else {
+                            return reply.redirect('/login');
+                        } 
+                    });   
+                } else {
+                    request.auth.session.clear();
+                    request.session.reset();   
+                    return reply.redirect('/login');
+                }
             }
         }
     },
@@ -353,7 +368,7 @@ server.route([
             handler: (request, reply) => {
                 
                 var postBody = {
-                    url: QBO.REQUEST_TOKEN_URL,
+                    url: QuickBooks.REQUEST_TOKEN_URL,
                     oauth: {
                         callback: 'https://' + C9_HOSTNAME + '/oauth/callback',
                         consumer_key: CONSUMER_KEY,
@@ -365,7 +380,7 @@ server.route([
                     //console.info('after post to QBO Reuqest token url.\nRequest Token: ');
                     //console.info(requestToken);
                     request.session.set(QBO_TOKEN_SECRET, requestToken.oauth_token_secret);
-                    reply.redirect(QBO.APP_CENTER_URL + requestToken.oauth_token);
+                    reply.redirect(QuickBooks.APP_CENTER_URL + requestToken.oauth_token);
                 });
                 
             }
@@ -378,7 +393,7 @@ server.route([
             handler: (request, reply) => {
                 
                 var postBody = {
-                    url: QBO.ACCESS_TOKEN_URL,
+                    url: QuickBooks.ACCESS_TOKEN_URL,
                     oauth: {
                         consumer_key: CONSUMER_KEY,
                         consumer_secret: CONSUMER_SECRET,
@@ -395,8 +410,9 @@ server.route([
                     var realmId = postBody.oauth.realmId;
                     var oauthToken = accessToken.oauth_token;
                     var oauthTokenSecret = accessToken.oauth_token_secret;
-                    
-                    var qbo = QBO({oauthToken: oauthToken, oauthTokenSecret: oauthTokenSecret, realmId: realmId});
+                   
+                    var credentials = {oauthToken: oauthToken, oauthTokenSecret: oauthTokenSecret, realmId: realmId}; 
+                    var qbo = QBO(credentials);
                     
                     qbo.getCompanyInfo(realmId, (err, companyInfo) => {
                         
@@ -407,7 +423,9 @@ server.route([
                             var user;// = Parse.User.current();
                             var pud;
                             
-                            Parse.User.become(token).then( u => { 
+                            return reply({company: companyInfo.CompanyName, credentials: credentials});
+                            
+                            /*Parse.User.become(token).then( u => { 
                                 
                                 user = Parse.User.current();
                                 return user.get('privateUserData').fetch();
@@ -447,7 +465,7 @@ server.route([
                                     //error creating / saving company
                                     //Parse.User.logOut();
                                     return reply(err); 
-                            });
+                            });*/
                         }        
                     });
                 });
@@ -493,7 +511,7 @@ server.views({
     helpersPath: 'src/views/helpers',
     context: {
         grantUrl: 'https://' + C9_HOSTNAME + '/oauth/requestToken',
-        appCenter: QBO.APP_CENTER_BASE
+        appCenter: QuickBooks.APP_CENTER_BASE
     }
 });
 
@@ -524,7 +542,7 @@ server.register(
             return process.exit(1);
         } else {
             server.start(() => {
-                //console.info('consumer key: ' + CONSUMER_KEY + ', consumer secret: ' + CONSUMER_SECRET);
+                console.info('consumer key: ' + CONSUMER_KEY + ', consumer secret: ' + CONSUMER_SECRET);
                 console.info('server started @ ' + IP + ':' + PORT + '\naccess @ ' + C9_HOSTNAME);
             });
         } 
@@ -563,17 +581,15 @@ var batchPromise = (qbo, items) => {
     return deferred.promise;
 };
 
-var sortAndSetCompanies = (companies) => {
-    var sorted;
+var filterCompanies = (companies) => {
+    var filtered = companies;
     if (SANDBOX) {
-        sorted = _.filter(companies, c => {
-            return c.get('name').toLowerCase().includes('sandbox');
+        filtered = _.filter(companies, c => {
+            return c.name.toLowerCase().includes('sandbox');
         }); 
-    } else {
-        sorted = _.sortBy(companies, (c) => {return c.get('name')});
-    }
-    sorted[0].set('isSelected', true);
-    return sorted;
+    } 
+    filtered[0].isSelected = true;
+    return filtered;
 };
 
 var createPaymentForCustomer = function(customerId, invoices) {
