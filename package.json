@@ -29,30 +29,52 @@
     "request": "^2.55.0",
     "underscore": "^1.8.3",
     "wreck": "^5.5.1",
-    "yar": "*"
+    "yar": "*",
+    "browserify": "^9.0.8",
+    "jshint": "latest",
+    "eslint": "latest",
+    "reactify": "^1.1.0",
+    "babel": "^4.7.13"
   },
   "main": "src/main.js",
   "scripts": {
-    "utils": "babel src/utils --out-dir lib/utils --watch",
-    "start": "watchify src/main.js -o src/bundle.js -v -d",
-    "ui": "babel src/components --out-dir lib/components --watch"  
+    "env": "env",
+    "hint": "jshint **.js",
+    "lint": "eslint **.js",
+    "dev": "browserify src/main.js -o src/bundle.js -v -d",
+    "buildServer": "babel src/utils --out-dir lib/utils",
+    "buildUi": "babel src/components --out-dir lib/components && browserify src/main.js -o src/bundle.js",
+    "clean": "rm src/bundle.js; rm -r lib",
+    "prebuild": "npm run clean -s",
+    "build": "npm run buildServer && npm run buildUi"
   },
   "browserify": {
     "transform": [
       [
-        "reactify",
-        {
+        "reactify", {
           "es6": true
         }
       ]
     ]
   },
   "devDependencies": {
-    "babel": "^4.7.13",
-    "browserify": "^9.0.8",
     "jsx-loader": "*",
     "react-tools": "^0.13.2",
-    "reactify": "^1.1.0",
     "watchify": "^3.1.2"
+  },
+  "jshintConfig": {
+    "node": true,
+    "esnext": true,
+    "unused": "vars",
+    "eqeqeq": true,
+    "forin": true,
+    "futurehostile": true,
+    "latedef": true,
+    "nonew": true,
+    "singleGroups": true,
+    "undef": true
+  },
+  "engines": {
+    "iojs": ">=2.0.1"
   }
 }
