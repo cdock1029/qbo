@@ -1,4 +1,6 @@
-//var React = require('react');
+'use strict';
+
+var React = require('react/addons');
 var Data = require('../flux/Data'),
     classnames = require('classnames'),
     Customer = require('./Customer'),
@@ -33,7 +35,7 @@ module.exports = React.createClass({
     
     _getCustomerData(offset, getCount) {
         this.setState({loading: true});
-        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset, count: getCount},function(err, data) {
+        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset, count: getCount}, function(err, data) {
             if (this.isMounted()) {
                 if (err) {
                     console.log('customer Data Error:', err);
@@ -45,7 +47,7 @@ module.exports = React.createClass({
                         totalCount: data.totalCount ? data.totalCount : this.state.totalCount,
                         loading: false,
                         invoices: Immutable.Map(data.Invoice),
-                        customers: Immutable.List(data.Customer),//customerList.merge(customers),
+                        customers: Immutable.List(data.Customer),
                         next: data.maxResults === pageSize ? data.startPosition + data.maxResults : null,
                         previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults  : 1)
                     });  

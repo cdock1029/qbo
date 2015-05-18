@@ -1,3 +1,6 @@
+'use strict';
+
+var React = require('react/addons');
 var accounting = require('accounting');
 var _ = require('underscore');
 var Invoices = require('./Invoices');
@@ -23,7 +26,6 @@ module.exports = React.createClass({
     
     render() {
         var customer = this.props.customer;
-        var key = this.props.count;
         var cells = [
             {content: customer.CompanyName},
             {content: <p>{customer.DisplayName}</p>},

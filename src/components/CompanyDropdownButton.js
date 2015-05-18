@@ -1,5 +1,7 @@
+'use strict';
+
 var React = require('react/addons');
-var {DropdownButton, ButtonGroup, MenuItem} = require('react-bootstrap');
+var {DropdownButton, MenuItem} = require('react-bootstrap');
 
 var _ = require('underscore');
 
@@ -9,7 +11,6 @@ module.exports = React.createClass({
     render: function() {
         
         var companies = this.props.companies;
-        var change = this.onChange;
         var selectedLabel;
         var menuItems = _(companies).map( (company, index) => {
             if (company.isSelected) {

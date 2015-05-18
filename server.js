@@ -224,13 +224,12 @@ server.route([{
       _(Math.ceil(items.length / BATCH_SIZE)).times(i => {
         let section = items.slice(i * BATCH_SIZE, i * BATCH_SIZE + BATCH_SIZE);
         promises.push(batchPromise(qbo, section));
+      });
 
-        Q.all(promises).done(results => {
-          let merged = _.union(results);
-          return reply(merged);
-        }, err => {
-          return reply(err);
-        });
+      Q.all(promises).done(results => {
+        return reply(results);
+      }, err => {
+        return reply(err);
       });
     }
   }
