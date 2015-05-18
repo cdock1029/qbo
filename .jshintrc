@@ -1,0 +1,12 @@
+{
+  "node": true,
+  "esnext": true,
+  "unused": "vars",
+  "eqeqeq": true,
+  "forin": true,
+  "futurehostile": true,
+  "latedef": true,
+  "nonew": true,
+  "singleGroups": true,
+  "undef": true
+}

@@ -1,8 +1,10 @@
+'use strict';
+
+var React = require('react/addons');
 var Customers = require('./Customers');
-    //React = require('react'),
 var Alert = require('./Alert');
 var Spinner = require('react-spinkit');
-var {Grid, Row, Col} = require('react-bootstrap');
+var {Row, Col} = require('react-bootstrap');
 
 var App = React.createClass({
     

@@ -1,0 +1,15 @@
+{
+  "ecmaFeatures": {
+    "blockBindings": true,
+    "arrowFunctions": true
+  },
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "quotes": [1, "single", "avoid-escape"],
+    "no-unused-vars": [1, { "vars": "all", "args": "none" }],
+    "camelcase": [2, {properties: "never"}],
+    "no-var": 2
+  }
+}

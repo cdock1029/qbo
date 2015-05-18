@@ -1,4 +1,6 @@
-//var React = require('react');
+'use strict';
+
+var React = require('react/addons');
 var _ = require('underscore');
 var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 

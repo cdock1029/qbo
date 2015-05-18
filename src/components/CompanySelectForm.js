@@ -1,3 +1,5 @@
+'use strict';
+
 var React = require('react/addons');
 var form = React.createFactory('form'), select = React.createFactory('select'), option = React.createFactory('option'); 
 var _ = require('underscore');

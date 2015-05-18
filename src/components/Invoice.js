@@ -1,3 +1,6 @@
+'use strict';
+
+var React = require('react/addons');
 var moment = require('moment');
 var accounting = require('accounting');
 var _ = require('underscore');

@@ -1,5 +1,6 @@
 'use strict';
 
+var React = require('react/addons');
 var {Alert} = require('react-bootstrap');
 var PureRenderMixin = React.addons.PureRenderMixin;
 

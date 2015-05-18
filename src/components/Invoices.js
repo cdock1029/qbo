@@ -1,3 +1,6 @@
+'use strict';
+
+var React = require('react/addons');
 var Invoice = require('./Invoice'),
     Data = require('../flux/Data'),
     moment = require('moment'),

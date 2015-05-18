@@ -37,10 +37,7 @@
         <div id="content" class="row"></div>
     </div>
     <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.1/react-with-addons.js"></script>-->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-    <!--<script src="https://www.parsecdn.com/js/parse-latest.js"></script>-->
-    <!--<script src="https://www.parsecdn.com/js/parse-react.js"></script>-->
     <script src="src/bundle.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -51,21 +48,20 @@
                 var value = $('.companyItems').index(this);
                 
                 $('<form action="/company" method="post"></form>')
-                    .append($('<input name="crumb" value="{{crumb}}"></input>'))
+                    .append($('<input name="crumb" value="{{crumb}}" type="hidden"></input>'))
                     .append($('<input name="company"></input>').val(value))
                     .appendTo('body')
                     .submit();
-            }); 
-             
+            });
+            window.crumb = function(value) {
+                if (value) {
+                    this.value = value;    
+                } else {
+                    return this.value || '{{crumb}}';
+                }
+            };
         });
-        /*$(document).ready(function() {
-            
-            $('#companySelect').change(function() {
-                var form = $('#companyForm');
-                form.submit();
-            }); 
-             
-        });*/
+       
     </script>
 </body>
 </html>
