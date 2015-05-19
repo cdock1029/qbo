@@ -1,7 +1,6 @@
 'use strict';
 
 const QuickBooks = require('node-quickbooks');
-const _ = require('underscore');
 const R = require('ramda');
 const Q = require('q');
 
@@ -59,7 +58,7 @@ QBO.filterCompanies = function filterCompanies(companies, SANDBOX) {
 };
 
 QBO.calculateTotal = R.reduce(function(acc, inv) {
-  return parseFloat(inv.Balance) + acc;   
+  return parseFloat(inv.Balance) + acc;
 }, 0);
 
 /**
@@ -71,23 +70,23 @@ QBO.createPartialPayment = R.converge(function(line, totalAmt) {
   return {
     Line: line,
     TotalAmt: Math.round(totalAmt * 100) / 100
-  };  
-}, QBO.createPaymentLine, QBO.calculateTotal); 
+  };
+}, QBO.createPaymentLine, QBO.calculateTotal);
 
 /**
  * @param {string} customerId
  * @param {Array} invoices
  */
 QBO.createPaymentForCustomer = function createPaymentForCustomer(customerId, invoices) {
-  
+
   const partialPayment = QBO.createPartialPayment(invoices);
   return {
     CustomerRef: {
       value: customerId
     },
-    TotalAmt: partialPayment.TotalAmt, 
+    TotalAmt: partialPayment.TotalAmt,
     sparse: false,
-    Line: partialPayment.Line 
+    Line: partialPayment.Line
   };
 
 };

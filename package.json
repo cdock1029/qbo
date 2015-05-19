@@ -20,6 +20,7 @@
     "hoek": "^2.12.0",
     "immutable": "^3.7.2",
     "jshint": "latest",
+    "mocha": "latest", 
     "moment": "^2.10.2",
     "node-parse-api": "git://github.com/cdock1029/node-parse-api.git",
     "node-quickbooks": "git://github.com/cdock1029/node-quickbooks.git#queried-count",
@@ -41,15 +42,13 @@
   "main": "src/main.js",
   "scripts": {
     "test": "mocha --compilers js:babel/register",
-    "hint": "jshint **.js",
-    "lint": "eslint **.js",
-    "dev": "browserify src/main.js -o src/bundle.js -v -d",
-    "buildServer": "babel src/utils --out-dir lib/utils",
-    "buildUi": "babel src/components --out-dir lib/components && browserify src/main.js -o src/bundle.js",
-    "clean": "rm src/bundle.js || true; rm -r lib || true",
+    "hint": "jshint ./",
+    "lint": "eslint ./",
+    "clean": "rm src/bundle.js || true",
     "prebuild": "npm run clean -s",
-    "build": "npm run buildServer && npm run buildUi",
-    "buildProd": "npm run build && npm run test && npm run hint && npm run lint"
+    "build": "browserify src/main.js -o src/bundle.js",
+    "prestart": "npm run build && npm run test && npm run hint && npm run lint",
+    "start": "node app.js"
   },
   "browserify": {
     "transform": [

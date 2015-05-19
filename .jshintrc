@@ -8,5 +8,9 @@
   "latedef": true,
   "nonew": true,
   "singleGroups": true,
-  "undef": true
+  "undef": true,
+  "globals": {
+    "it": false,
+    "describe": false
+  }
 }
