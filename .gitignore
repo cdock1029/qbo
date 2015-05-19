@@ -3,3 +3,8 @@ server_build.js
 .c9
 npm-debug.log
 lib
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
