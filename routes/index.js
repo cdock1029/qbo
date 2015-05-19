@@ -260,7 +260,9 @@ module.exports = [{
           }, token);
 
         }, function(err) {
-          return reply(err);
+          return reply.view('login.html', {
+            message: err.error
+          });
         });
       }
       else {
