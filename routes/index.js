@@ -1,19 +1,19 @@
 'use strict';
 
-const CONSUMER_KEY = process.env.SANDBOX === 'true' ? process.env.DEV_CONSUMER_KEY : process.env.CONSUMER_KEY;
-const CONSUMER_SECRET = process.env.SANDBOX === 'true' ? process.env.DEV_CONSUMER_SECRET : process.env.CONSUMER_SECRET;
+const CONSUMER_KEY = process.env.CONSUMER_KEY;
+const CONSUMER_SECRET = process.env.CONSUMER_SECRET;
 
 const PARSE_APP_ID = process.env.PARSE_APP_ID;
 const PARSE_REST_KEY = process.env.PARSE_REST_KEY;
 
-const C9_HOSTNAME = process.env.C9_HOSTNAME;
+const HOSTNAME = process.env.HOSTNAME || process.env.C9_HOSTNAME;
 const QBO_TOKEN_SECRET = 'oauth_token_secret';
 
 const BATCH_SIZE = 25;
 
 let Request = require('request');
 let QuickBooks = require('../src/utils/QBO');
-let createQBO = QuickBooks.init(CONSUMER_KEY, CONSUMER_SECRET, /*useSandbox*/process.env.SANDBOX === 'true', /*useDebug*/true);
+let createQBO = QuickBooks.init(CONSUMER_KEY, CONSUMER_SECRET, /*useSandbox*/process.env.ENV !== 'prod', /*useDebug*/process.env.ENV !== 'prod');
 let filterCompanies = QuickBooks.filterCompanies;
 let createPaymentForCustomer = QuickBooks.createPaymentForCustomer;
 let batchPromise = QuickBooks.batchPromise;
@@ -242,7 +242,7 @@ module.exports = [{
                     return reply(findErr);
                   }
                   else {
-                    let filteredCompanies = filterCompanies(companies.results, process.env.SANDBOX === 'true');
+                    let filteredCompanies = filterCompanies(companies.results, process.env.ENV !== 'prod');
                     let session = {
                       user: {
                         id: user.objectId,
@@ -333,7 +333,7 @@ module.exports = [{
       let postBody = {
         url: QuickBooks.REQUEST_TOKEN_URL,
         oauth: {
-          callback: 'https://' + C9_HOSTNAME + '/oauth/callback',
+          callback: 'https://' + HOSTNAME + '/oauth/callback',
           consumer_key: CONSUMER_KEY,
           consumer_secret: CONSUMER_SECRET
         }
