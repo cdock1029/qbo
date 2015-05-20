@@ -1,20 +1,52 @@
 <!DOCTYPE html>
-<!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]-->
-<html class="no-js" lang="en" >
-    <head>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>Waldon Management</title>
-    </head>
-    <body>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waldon Management</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+</head>
+
+<body>
+  <div class="container-fluid" style="padding: 45px">
+    <div class="row">
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-3 col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
         {{#if message}}
-        <span>{{message}}</span> 
+        <div class="alert alert-info" role="alert">
+          <strong>{{message}}</strong>
+        </div>
         {{/if}}
-        <form method="post" action="/login">
-            <input id="username" type="text" name="username" placeholder="Username"/>
-            <input id="password" type="password" name="password" placeholder="Password" />
-            <input type="hidden" name="crumb" value="{{crumb}}"/>
-            <input type="submit" value="Login"/>
+        <form class="form-horizontal" method="post" action="/login">
+          <fieldset>
+            <!-- Form Name -->
+            <legend><span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+            </legend>
+
+            <!-- Text input-->
+            <div class="form-group">
+              <!--<label class="col-md-4 control-label" for="username"></label>-->
+              <input id="username" name="username" type="text" placeholder="Username" class="form-control input-md" required="">
+            </div>
+
+            <!-- Password input-->
+            <div class="form-group">
+              <!--<label class="col-md-4 control-label" for="password"></label>-->
+              <input id="password" name="password" type="password" placeholder="Password" class="form-control input-md" required="">
+            </div>
+
+            <!-- Button -->
+            <div class="form-group">
+              <!--<label class="col-md-4 control-label" for=""></label>-->
+                <button type="submit" class="btn btn-success btn-block">Login</button>
+            </div>
+            <input type="hidden" name="crumb" value="{{crumb}}" />
+          </fieldset>
         </form>
-    </body> 
+      </div>
+    </div>
+  </div>
+</body>
+
 </html>
