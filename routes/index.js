@@ -14,7 +14,6 @@ const BATCH_SIZE = 25;
 let Request = require('request');
 let QuickBooks = require('../src/utils/QBO');
 let createQBO = QuickBooks.init(CONSUMER_KEY, CONSUMER_SECRET, /*useSandbox*/process.env.ENV !== 'prod', /*useDebug*/process.env.ENV !== 'prod');
-let filterCompanies = QuickBooks.filterCompanies;
 let createPaymentForCustomer = QuickBooks.createPaymentForCustomer;
 let batchPromise = QuickBooks.batchPromise;
 let getCount = QuickBooks.getCount;
@@ -242,7 +241,9 @@ module.exports = [{
                     return reply(findErr);
                   }
                   else {
-                    let filteredCompanies = filterCompanies(companies.results, process.env.ENV !== 'prod');
+                    if (companies && companies.results && companies.results.length) {
+                      companies.results[0].isSelected = true;
+                    }
                     let session = {
                       user: {
                         id: user.objectId,
@@ -250,7 +251,7 @@ module.exports = [{
                         username: user.username,
                         token: token
                       },
-                      companies: filteredCompanies
+                      companies: companies.results
                     };
                     request.auth.session.set(session);
                     return reply.redirect('/');

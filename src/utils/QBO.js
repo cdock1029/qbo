@@ -36,27 +36,6 @@ QBO.createPaymentLine = R.map(function(inv) {
   };
 });
 
-
-
-/**
- * @param {Array} companies
- * @param {boolean} SANDBOX true if in sandbox mode
- * @returns {Array} filter Sandbox companies or not, according to env.
- */
-QBO.filterCompanies = function filterCompanies(companies, SANDBOX) {
-
-  const filtered = R.filter(c => {
-
-    let isASandbox = c.name.toLowerCase().includes('sandbox');
-    return SANDBOX ? isASandbox : !isASandbox;
-
-  }, companies);
-
-  filtered[0].isSelected = true;
-  return filtered;
-
-};
-
 QBO.calculateTotal = R.reduce(function(acc, inv) {
   return parseFloat(inv.Balance) + acc;
 }, 0);

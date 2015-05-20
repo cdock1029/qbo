@@ -17,39 +17,6 @@ describe('QBO', function() {
     });
   });
 
-  describe('.filterCompanies(companies, SANDBOX)', function() {
-
-
-    it('should return a list of companies with first item isSelected set to true.', function() {
-      const companies = [
-        {name: 'Prod company 1'},
-        {name: 'Prod company 2'},
-        {name: 'Sandbox company'}
-      ];
-      let filtered = QBO.filterCompanies(companies, false);
-
-      expect(filtered).to.have.length(2);
-      expect(filtered[0]).to.have.property('isSelected', true);
-      expect(filtered[1]).to.not.have.property('isSelected');
-    });
-
-    it('should return the sandbox copmany if SANDBOX param is true', function() {
-      const companies = [
-        {name: 'Prod company 1', id: 0},
-        {name: 'Prod company 2', id: 1},
-        {name: 'Sandbox company', id: 2},
-        {name: 'another saNDbox fake company', id: 3}
-      ];
-
-      let filtered = QBO.filterCompanies(companies, true);
-
-      expect(filtered).to.have.length(2);
-      expect(filtered[0]).to.have.property('isSelected', true);
-      expect(filtered[0].name).to.match(/sandbox/i);
-      expect(filtered[1].name).to.match(/sandbox/i);
-    });
-  });
-
   describe('.createPaymentLine(invoices)', function() {
     it('takes a list of invoices and returns Payment "Line" linking to invoices', function() {
       const invoices = [
