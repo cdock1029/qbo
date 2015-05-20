@@ -2,8 +2,9 @@
 
 const AuthCookie = require('hapi-auth-cookie');
 const Yar = require('yar');
+const HapiRequireHttps = require('hapi-require-https');
 
-module.exports = [AuthCookie, {
+module.exports = [HapiRequireHttps, AuthCookie, {
   register: require('crumb'),
   options: {
     cookieOptions: {
