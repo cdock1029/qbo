@@ -5,7 +5,7 @@
     "babel": "^5.4.0",
     "bell": "^2.4.0",
     "boom": "^2.7.1",
-    "browserify": "^9.0.8",
+    "browserify": "^10.2.1",
     "chai": "^2.3.0",
     "classnames": "^1.2.2",
     "crumb": "^4.0.3",
@@ -20,7 +20,7 @@
     "hoek": "^2.12.0",
     "immutable": "^3.7.2",
     "jshint": "latest",
-    "mocha": "latest", 
+    "mocha": "latest",
     "moment": "^2.10.2",
     "node-parse-api": "git://github.com/cdock1029/node-parse-api.git",
     "node-quickbooks": "git://github.com/cdock1029/node-quickbooks.git#queried-count",
@@ -33,7 +33,6 @@
     "react": "^0.13.2",
     "react-bootstrap": "^0.21.0",
     "react-spinkit": "^1.0.2",
-    "reactify": "^1.1.0",
     "request": "^2.55.0",
     "underscore": "^1.8.3",
     "wreck": "^5.5.1",
@@ -48,22 +47,19 @@
     "prebuild": "npm run clean -s",
     "build": "browserify src/main.js -o src/bundle.js",
     "prestart": "npm run build && npm run test && npm run hint && npm run lint",
+    "dev": "npm run build && node app.js",
     "start": "node app.js"
   },
   "browserify": {
     "transform": [
       [
-        "reactify",
-        {
-          "es6": true
-        }
+        "babelify"
       ]
     ]
   },
   "devDependencies": {
-    "jsx-loader": "*",
-    "react-tools": "^0.13.2",
-    "watchify": "^3.1.2"
+    "babelify": "^6.1.1",
+    "watchify": "^3.2.1"
   },
   "engines": {
     "iojs": "2.0.1"

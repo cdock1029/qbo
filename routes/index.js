@@ -109,7 +109,7 @@ module.exports = [{
           else {
             let customers = response.QueryResponse.Customer;
             let promises = [];
-            _(Math.ceil(customers.length / BATCH_SIZE)).times(i => {
+            _(customers && Math.ceil(customers.length / BATCH_SIZE) || 0).times(i => {
 
               let segment = customers.slice(i * BATCH_SIZE, i * BATCH_SIZE + BATCH_SIZE);
               let batches = _.map(segment, (customer, index) => {
@@ -212,6 +212,7 @@ module.exports = [{
           });
         }
         db.loginUser(username, password).then(function(user) {
+
           let token = user.sessionToken;
 
           db.find('PrivateUserData', {
@@ -219,6 +220,7 @@ module.exports = [{
             keys: 'companies'
           }, function(err, privateUserData) {
             if (err) {
+              console.error(err);
               return reply(err);
             }
             else {
@@ -238,6 +240,7 @@ module.exports = [{
                 },
                 function(findErr, companies) {
                   if (findErr) {
+                    console.error(findErr);
                     return reply(findErr);
                   }
                   else {
@@ -261,6 +264,7 @@ module.exports = [{
           }, token);
 
         }, function(err) {
+          console.error(err);
           return reply.view('login.html', {
             message: err.error
           });

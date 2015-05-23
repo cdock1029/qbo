@@ -81,6 +81,7 @@ QBO.batchPromise = function batchPromise(qbo, items) {
   qbo.batch(items, (err, result) => {
 
     if (err) {
+      console.error(err);
       deferred.reject(err);
     }
     else {
@@ -110,6 +111,7 @@ QBO.getCount = function getCount(fn, qbo, countParam, queryParams) {
     fn.call(qbo, combined, (e, result) => {
 
       if (e) {
+        console.error(e);
         deferred.reject(e);
       }
       else {
