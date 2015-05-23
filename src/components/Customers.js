@@ -44,7 +44,7 @@ module.exports = React.createClass({
                     console.log('customer data returned'); 
                     var customerList = this.state.customers;
                     this.setState({
-                        totalCount: data.totalCount ? data.totalCount : this.state.totalCount,
+                        totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : this.state.totalCount,
                         loading: false,
                         invoices: Immutable.Map(data.Invoice),
                         customers: Immutable.List(data.Customer),
