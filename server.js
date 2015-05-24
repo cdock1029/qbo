@@ -22,8 +22,7 @@ server.register(plugins, (err) => {
     cookie: 'user',
     isSecure: true,
     redirectTo: '/login',
-    clearInvalid: true,
-    ttl: 4 * 60 * 60 * 1000 //4 hours TODO configuration
+    clearInvalid: true
   });
 
   server.auth.default('user');
