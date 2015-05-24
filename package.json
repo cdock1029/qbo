@@ -48,7 +48,8 @@
     "prebuild": "npm run clean -s",
     "build": "browserify src/main.js -o src/bundle.js",
     "prestart": "npm run build && npm run test && npm run hint && npm run lint",
-    "dev": "npm run build && node app.js",
+    "watch": "watchify src/main.js -o src/bundle.js -dv",
+    "dev": "npm run watch & node --debug=15454 app.js",
     "start": "node app.js"
   },
   "browserify": {

@@ -18,11 +18,13 @@ var Invoices = React.createClass({
                         var lines = _(invoice.Line).where({DetailType: "SalesItemLineDetail"});
                         
                         var descriptionLabel; 
-                        if (lines.length === 1) {
-                            descriptionLabel = lines[0].SalesItemLineDetail.ItemRef.name; 
+                        var firstLineItem = lines[0];
+                        if (! lines.length) {
+                            descriptionLabel = '(Unlabeled Charge)';
+                        } else if (lines.length === 1) {
+                            descriptionLabel = firstLineItem.SalesItemLineDetail.ItemRef.name; 
                         } else {
-                            //descriptionLabel = invoice.PrivateNote || (invoice.CustomerMemo && invoice.CustomerMemo.value);
-                            descriptionLabel = invoice.PrivateNote || lines[0].SalesItemLineDetail.ItemRef.name;
+                            descriptionLabel = invoice.PrivateNote || firstLineItem.SalesItemLineDetail.ItemRef.name;
                             descriptionLabel += '...';
                         }
                         var style = {

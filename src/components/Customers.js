@@ -24,6 +24,7 @@ module.exports = React.createClass({
         return ( 
             ! Immutable.is(this.state.customers, nextState.customers) || 
             ! Immutable.is(this.state.payments, nextState.payments) || 
+            ! Immutable.is(this.state.invoices, nextState.invoices) ||
             nextState.expanded !== this.state.expanded ||
             nextState.isSubmitting !== this.state.isSubmitting ||
             nextState.loading !== this.state.loading ||
@@ -41,7 +42,6 @@ module.exports = React.createClass({
                     console.log('customer Data Error:', err);
                     this.setState({ alert: {className: 'alert alert-danger', message: err, loading: false} })   
                 } else {
-                    console.log('customer data returned'); 
                     var customerList = this.state.customers;
                     this.setState({
                         totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : this.state.totalCount,
@@ -57,31 +57,29 @@ module.exports = React.createClass({
     },
     
     componentDidMount() {
-        //window.PAY = this.state.payments;
         this._getCustomerData(1, true);
     },
     
     _updatePayments(customerId, invoices) {
-        console.log('Customers _updatePayments  customerId: %s invoices: %O', customerId, invoices);
+        //console.log('Customers _updatePayments  customerId: %s invoices: %O', customerId, invoices);
         var paymentsMap = this.state.payments;
         var updatedMap;
-        //var customerObject = paymentsMap.get(customerId); 
             
         if (invoices){//customerObject) {
             updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices}); 
         } else {
             updatedMap = paymentsMap.delete(customerId);//, {customerId: customerId, invoices: invoices});
         }
-        console.log('Customers _updatePayments  Map.get:', updatedMap.get(customerId));
+        //console.log('Customers _updatePayments  Map.get:', updatedMap.get(customerId));
         this.setState({ payments: updatedMap });
     },
     
     _submitPayments() {//will have customerRef,List of amount / inv Ids
-        this.setState({isSubmitting: true});
+        this.setState({loading: true});
         var payments = this.state.payments.toObject(); 
         Data.submitPayments(payments, function(err, batchItemResponse) {
             if (err) {
-                this.setState({isSubmitting: false});
+                this.setState({loading: false});
             } else {
                 console.log(batchItemResponse); 
                 this.setState({ 
@@ -90,7 +88,6 @@ module.exports = React.createClass({
                         message: 'Payments applied', 
                         strong: 'Success! '
                     },
-                    isSubmitting: false,
                     payments: this.state.payments.clear() 
                 });
                 this._getCustomerData(1, true); 
@@ -108,12 +105,10 @@ module.exports = React.createClass({
     },
     
     _navigate(offset) {
-        console.log('pageItem clicked');
         this._getCustomerData(offset);
     },
     
     render() {
-        console.log('Customers: render');
         var alert = this.state.alert;
         var alertDiv = alert ?
                         <Alert type={alert.type} message={alert.message} strong={alert.strong} /> : 
@@ -129,15 +124,13 @@ module.exports = React.createClass({
                     key={index} 
                     callback={this._updatePayments} 
                     selected={selected} 
-                    isSubmitting={selected && this.state.isSubmitting} 
+                    isSubmitting={false/*selected && this.state.loading*/} 
                     expanded={this.state.expanded} />;
             
         });
-        var spinner = this.state.loading ? 
-                        <Button disabled>
-                            <Spinner spinnerName='three-bounce' />
-                        </Button> : 
-                        null;
+        var spinner = <Button disabled style={{display: this.state.loading ? 'inline-block' : 'none'}}>
+                            <Spinner spinnerName='three-bounce' noFadeIn/>
+                        </Button>; 
         var pages = null;
         if (this.state.totalCount) {
             var numPages = Math.floor(this.state.totalCount / pageSize) + (this.state.totalCount % pageSize > 0 ? 1 : 0);
