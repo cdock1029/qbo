@@ -17,47 +17,20 @@ var pageSize = 100;
 
 module.exports = React.createClass({
     getInitialState() {
-        return { customers: Immutable.List(), invoices: Immutable.Map(), payments: Immutable.Map(), expanded: true, isSubmitting: false, loading: false};
+      return {}; 
     },
-    
     shouldComponentUpdate(nextProps, nextState) {
-        return ( 
-            ! Immutable.is(this.state.customers, nextState.customers) || 
-            ! Immutable.is(this.state.payments, nextState.payments) || 
-            ! Immutable.is(this.state.invoices, nextState.invoices) ||
-            nextState.expanded !== this.state.expanded ||
-            nextState.isSubmitting !== this.state.isSubmitting ||
-            nextState.loading !== this.state.loading ||
-            nextState.previous !== this.state.previous ||
-            nextState.next !== this.state.next ||
-            nextState.totalCount !== this.state.totalCount
+        return true; ( 
+            ! Immutable.is(this.props.customers, nextProps.customers) || 
+            ! Immutable.is(this.props.payments, nextProps.payments) || 
+            ! Immutable.is(this.props.invoices, nextProps.invoices) ||
+            nextProps.expanded !== this.props.expanded ||
+            nextProps.isSubmitting !== this.props.isSubmitting ||
+            nextProps.loading !== this.props.loading ||
+            nextProps.previous !== this.props.previous ||
+            nextProps.next !== this.props.next ||
+            nextProps.totalCount !== this.props.totalCount
         );
-    },
-    
-    _getCustomerData(offset, getCount) {
-        this.setState({loading: true});
-        Data.getCustomers({asc: 'CompanyName', limit: pageSize, offset: offset, count: getCount}, function(err, data) {
-            if (this.isMounted()) {
-                if (err) {
-                    console.log('customer Data Error:', err);
-                    this.setState({ alert: {className: 'alert alert-danger', message: err, loading: false} })   
-                } else {
-                    var customerList = this.state.customers;
-                    this.setState({
-                        totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : this.state.totalCount,
-                        loading: false,
-                        invoices: Immutable.Map(data.Invoice),
-                        customers: Immutable.List(data.Customer),
-                        next: data.maxResults === pageSize ? data.startPosition + data.maxResults : null,
-                        previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults  : 1)
-                    });  
-                }
-            }
-        }.bind(this));
-    },
-    
-    componentDidMount() {
-        this._getCustomerData(1, true);
     },
     
     _updatePayments(customerId, invoices) {
@@ -109,41 +82,42 @@ module.exports = React.createClass({
     },
     
     render() {
-        var alert = this.state.alert;
+        console.log('render Customers. ');
+        //debugger;
+        var alert = this.props.alert;
         var alertDiv = alert ?
                         <Alert type={alert.type} message={alert.message} strong={alert.strong} /> : 
                         null;
-            
-        var custs = this.state.customers.map((c, index) => {
-            var selected = this.state.payments.has(c.Id);
-            
+        var custs = this.props.customers.map((c, index) => {
+            var selected = this.props.payments.has(c.Id);
+            console.log('customer id: ' + c.Id);
             return <Customer 
                     customer={c} 
-                    invoices={this.state.invoices.get(c.Id)}
+                    invoices={this.props.invoices.get(c.Id)}
                     count={index + 1}
                     key={index} 
                     callback={this._updatePayments} 
                     selected={selected} 
                     isSubmitting={false/*selected && this.state.loading*/} 
-                    expanded={this.state.expanded} />;
+                    expanded={this.props.expanded} />;
             
         });
-        var spinner = <Button disabled style={{display: this.state.loading ? 'inline-block' : 'none'}}>
+        var spinner = <Button disabled style={{display: this.props.loading ? 'inline-block' : 'none'}}>
                             <Spinner spinnerName='three-bounce' noFadeIn/>
                         </Button>; 
         var pages = null;
-        if (this.state.totalCount) {
-            var numPages = Math.floor(this.state.totalCount / pageSize) + (this.state.totalCount % pageSize > 0 ? 1 : 0);
+        if (this.props.totalCount) {
+            var numPages = Math.floor(this.props.totalCount / pageSize) + (this.props.totalCount % pageSize > 0 ? 1 : 0);
             var pageElements = _(numPages).times(function(i) {
                 
                         var offset = i * pageSize + 1; 
                         var classes;
-                        if (this.state.previous && this.state.next) {
+                        if (this.props.previous && this.props.next) {
                             classes = classnames({
-                                active: (this.state.previous < offset &&  offset < this.state.next),
-                                disabled: this.state.loading
+                                active: (this.props.previous < offset &&  offset < this.props.next),
+                                disabled: this.props.loading
                             }); 
-                        } else if (this.state.previous) {
+                        } else if (this.props.previous) {
                             classes = classnames({
                                 active: i === (numPages - 1)
                             });
@@ -155,13 +129,13 @@ module.exports = React.createClass({
                         
                         return <li className={classes} key={i}><a href={'#' + offset} onClick={this._navigate.bind(null, offset)}>{i + 1}</a></li>;
                     }, this);
-            var nextClass = classnames({ disabled: !this.state.next || this.state.loading });
-            var prevClass = classnames({ disabled: !this.state.previous || this.state.loading });
+            var nextClass = classnames({ disabled: !this.props.next || this.props.loading });
+            var prevClass = classnames({ disabled: !this.props.previous || this.props.loading });
             pageElements.unshift(
-                 <li className={prevClass} key={'prev'}><a href={'#' + this.state.previous} onClick={this.state.previous && !this.state.loading ? this._navigate.bind(null, this.state.previous): null}>&larr; Previous</a></li>
+                 <li className={prevClass} key={'prev'}><a href={'#' + this.props.previous} onClick={this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous): null}>&larr; Previous</a></li>
             );
             pageElements.push(
-                 <li className={nextClass} key={'next'}><a href={'#' + this.state.next} onClick={this.state.next && !this.state.loading ? this._navigate.bind(null, this.state.next): null}>Next &rarr;</a></li>
+                 <li className={nextClass} key={'next'}><a href={'#' + this.props.next} onClick={this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next): null}>Next &rarr;</a></li>
             );
             pages = <nav>
                 <ul className="pagination">
@@ -174,9 +148,9 @@ module.exports = React.createClass({
             <div className="row">
                 <div className="col-md-6 col-md-offset-6">
                     <ButtonToolbar>
-                        <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.state.payments.size < 1}>Deselect All</Button> 
+                        <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.props.payments.size < 1}>Deselect All</Button> 
                         <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
-                        <Button bsStyle="success" onClick={this._submitPayments} disabled={this.state.payments.size < 1}>Pay Selected</Button> 
+                        <Button bsStyle="success" onClick={this._submitPayments} disabled={this.props.payments.size < 1}>Pay Selected</Button> 
                         {spinner} 
                     </ButtonToolbar>
                 </div>

@@ -3,47 +3,51 @@
 var Qs = require('qs');
 
 module.exports = {
-
+  
+  getCustomersPromise: query => {
+    return Promise.resolve($.ajax('/customers?' + Qs.stringify(query)));
+  },
+  
   getCustomers: (query, cb) => {
 
-      $.ajax('/customers?' + Qs.stringify(query)).done(data => {
+    $.ajax('/customers?' + Qs.stringify(query)).done(data => {
 
-        if (data.crumb) {
-          window.crumb(data.crumb);
-        }
-        cb(null, data.QueryResponse);//array of customers
+      if (data.crumb) {
+        window.crumb(data.crumb);
+      }
+      cb(null, data.QueryResponse); //array of customers
 
-      }).fail((jqXHR, textStatus, errorThrown) => {
+    }).fail((jqXHR, textStatus, errorThrown) => {
 
-        cb(errorThrown, null);
-      });
+      cb(errorThrown, null);
+    });
 
-    },
-    submitPayments: (data, cb) => {
+  },
+  submitPayments: (data, cb) => {
 
-      console.log('submitPayments:', data);
-      $.ajax('/payment', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-Token': window.crumb()
-        },
-        data: {
-          payments: data
-        }
-      }).done((response) => {
+    console.log('submitPayments:', data);
+    $.ajax('/payment', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': window.crumb()
+      },
+      data: {
+        payments: data
+      }
+    }).done((response) => {
 
-        cb(null, response);
-      });
-    },
-    getInvoices: (query, cb) => {
+      cb(null, response);
+    });
+  },
+  getInvoices: (query, cb) => {
 
-      $.ajax('/invoices?' + Qs.stringify(query)).done((data) => {
+    $.ajax('/invoices?' + Qs.stringify(query)).done((data) => {
 
-        if (data.crumb) {
-          window.crumb(data.crumb);
-        }
-        cb(null, data.QueryResponse.Invoice);
-      });
-    }
+      if (data.crumb) {
+        window.crumb(data.crumb);
+      }
+      cb(null, data.QueryResponse.Invoice);
+    });
+  }
 
 };
