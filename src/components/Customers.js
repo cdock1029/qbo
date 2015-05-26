@@ -20,7 +20,7 @@ module.exports = React.createClass({
       return {}; 
     },
     shouldComponentUpdate(nextProps, nextState) {
-        return true; ( 
+        return true;/* ( 
             ! Immutable.is(this.props.customers, nextProps.customers) || 
             ! Immutable.is(this.props.payments, nextProps.payments) || 
             ! Immutable.is(this.props.invoices, nextProps.invoices) ||
@@ -30,21 +30,11 @@ module.exports = React.createClass({
             nextProps.previous !== this.props.previous ||
             nextProps.next !== this.props.next ||
             nextProps.totalCount !== this.props.totalCount
-        );
+        );*/
     },
     
     _updatePayments(customerId, invoices) {
-        //console.log('Customers _updatePayments  customerId: %s invoices: %O', customerId, invoices);
-        var paymentsMap = this.state.payments;
-        var updatedMap;
-            
-        if (invoices){//customerObject) {
-            updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices}); 
-        } else {
-            updatedMap = paymentsMap.delete(customerId);//, {customerId: customerId, invoices: invoices});
-        }
-        //console.log('Customers _updatePayments  Map.get:', updatedMap.get(customerId));
-        this.setState({ payments: updatedMap });
+        this.props.flux.getActions('customers').updatePayments(customerId, invoices);
     },
     
     _submitPayments() {//will have customerRef,List of amount / inv Ids
@@ -69,8 +59,7 @@ module.exports = React.createClass({
     },
     
     _toggleExpanded() {
-        var newState = !this.state.expanded;
-        this.setState({expanded: newState});     
+        this.props.flux.getActions('customers').toggleExpanded();
     },
     
     _deselectAll() {
@@ -83,7 +72,7 @@ module.exports = React.createClass({
     
     render() {
         console.log('render Customers. ');
-        //debugger;
+        console.log('Expanded: ', this.props.expanded);
         var alert = this.props.alert;
         var alertDiv = alert ?
                         <Alert type={alert.type} message={alert.message} strong={alert.strong} /> : 
@@ -149,7 +138,7 @@ module.exports = React.createClass({
                 <div className="col-md-6 col-md-offset-6">
                     <ButtonToolbar>
                         <Button bsStyle="primary" onClick={this._deselectAll} disabled={this.props.payments.size < 1}>Deselect All</Button> 
-                        <Button bsStyle="info" disabled onClick={this._toggleExpanded}>Collapse/Expand</Button> 
+                        <Button bsStyle="info" onClick={this._toggleExpanded}>Collapse/Expand</Button> 
                         <Button bsStyle="success" onClick={this._submitPayments} disabled={this.props.payments.size < 1}>Pay Selected</Button> 
                         {spinner} 
                     </ButtonToolbar>

@@ -12,9 +12,19 @@ const CustomerActions = {
     } catch (err) {
       throw err.responseText;
     }
-  }
+  },
   
-   
+  updatePayments(customerId, invoices) {
+    return {
+      customerId: customerId,
+      invoices: invoices
+    }    
+  },
+  
+  toggleExpanded() {
+    console.log('actions toggleExpanded');
+    return true;
+  }
 };
 
 const AlertActions = {

@@ -50,7 +50,7 @@ var Invoices = React.createClass({
                             
                         return (
                             //<Invoice key={index} invoice={inv} />
-                            <Panel collapsable defaultExpanded={false} header={header} key={index}>
+                            <Panel collapsable={this.props.expanded} defaultExpanded={false} header={header} key={index}>
                                 <ListGroup fill>
                                     {listGroupItems}
                                 </ListGroup>

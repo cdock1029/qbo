@@ -36,7 +36,11 @@ class CustomerStore extends Store {
     super();   
     this.FLUX = flux; 
     const customerActionIds = flux.getActionIds('customers');
+    
     this.registerAsync(customerActionIds.getCustomers, this.setLoading, this.handleCustomers, this.handleJqueryError);
+    this.register(customerActionIds.updatePayments, this.updatePayments);
+    this.register(customerActionIds.toggleExpanded, this.toggleExpanded);
+    
     this.state = {
       pageSize: PAGE_SIZE,
       customers: Immutable.List(),
@@ -51,6 +55,25 @@ class CustomerStore extends Store {
   
   setLoading() {
     this.setState({ loading: true });  
+  }
+  
+  toggleExpanded() {
+    console.log('store toggleExpanded');
+    this.setState({ expanded: !this.state.expanded });  
+  }
+  
+  updatePayments({customerId, invoices}) {
+      
+    let paymentsMap = this.state.payments;
+    let updatedMap;
+        
+    if (invoices){//customerObject) {
+        updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices}); 
+    } else {
+        updatedMap = paymentsMap.delete(customerId);//, {customerId: customerId, invoices: invoices});
+    }
+    //console.log('Customers _updatePayments  Map.get:', updatedMap.get(customerId));
+    this.setState({ payments: updatedMap });
   }
   
   handleJqueryError(error) {
