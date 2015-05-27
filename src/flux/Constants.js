@@ -1,6 +1,6 @@
 
 const CONST = function CONST() {}; 
 
-CONST.PAGE_SIZE = 100;
+CONST.PAGE_SIZE = 2;
 
 module.exports = CONST;

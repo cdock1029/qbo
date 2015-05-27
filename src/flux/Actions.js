@@ -21,6 +21,11 @@ const CustomerActions = {
     }    
   },
   
+  submitPayments() {
+    console.log('actions submitPayments');
+    return true;  
+  },
+  
   toggleExpanded() {
     console.log('actions toggleExpanded');
     return true;

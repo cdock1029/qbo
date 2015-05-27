@@ -8,7 +8,7 @@ class CustomersWrapper extends React.Component {
   render() {
     return (
       <FluxComponent connectToStores={'customers'}>
-        <Customers /> 
+        <Customers pageSize={PAGE_SIZE} /> 
       </FluxComponent>       
     );
   } 

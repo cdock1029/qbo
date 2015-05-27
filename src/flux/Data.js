@@ -23,6 +23,20 @@ module.exports = {
     });
 
   },
+  
+  submitPaymentsPromise: data => {
+    return Promise.resolve($.ajax('/payment',
+    {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': window.crumb()
+      },
+      data: {
+        payments: data
+      }
+    }));  
+  },
+  
   submitPayments: (data, cb) => {
 
     console.log('submitPayments:', data);

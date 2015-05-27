@@ -29,9 +29,8 @@ module.exports = React.createClass({
         var cells = [
             {content: customer.CompanyName},
             {content: <p>{customer.DisplayName}</p>},
-            /*{content: this.state.isLoading ? <Spinner spinnerName='three-bounce' /> : <Invoices invoices={customer.invoices} expanded={this.props.expanded} />}*/
             {content: <Invoices invoices={this.props.invoices} expanded={this.props.expanded} />},
-            {content: this.props.isSubmitting ? <Spinner spinnerName='double-bounce' /> : <Button bsStyle={this.props.selected ? 'success' : 'default'} bsSize="large" onClick={this._handleChange}>{accounting.formatMoney(customer.Balance)}</Button>}
+            {content: <Button bsStyle={this.props.selected ? 'success' : 'default'} bsSize="large" onClick={this._handleChange}>{accounting.formatMoney(customer.Balance)}</Button>}
         ];
         return(
             <tr>

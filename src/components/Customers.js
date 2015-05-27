@@ -13,12 +13,18 @@ var Data = require('../flux/Data'),
     
 var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
-var pageSize = 100;
-
-module.exports = React.createClass({
-    getInitialState() {
-      return {}; 
-    },
+class Customers extends React.Component {
+  
+    constructor(props) {
+      super(props);  
+      this.state = {};
+      this.customerActions = props.flux.getActions('customers');
+      this._updatePayments = this._updatePayments.bind(this); 
+      this._submitPayments = this._submitPayments.bind(this); 
+      this._toggleExpanded = this._toggleExpanded.bind(this);
+      this._navigate = this._navigate.bind(this);
+    }
+    
     shouldComponentUpdate(nextProps, nextState) {
         return true;/* ( 
             ! Immutable.is(this.props.customers, nextProps.customers) || 
@@ -31,48 +37,28 @@ module.exports = React.createClass({
             nextProps.next !== this.props.next ||
             nextProps.totalCount !== this.props.totalCount
         );*/
-    },
+    }
     
     _updatePayments(customerId, invoices) {
-        this.props.flux.getActions('customers').updatePayments(customerId, invoices);
-    },
+        this.customerActions.updatePayments(customerId, invoices);
+    }
     
     _submitPayments() {//will have customerRef,List of amount / inv Ids
-        this.setState({loading: true});
-        var payments = this.state.payments.toObject(); 
-        Data.submitPayments(payments, function(err, batchItemResponse) {
-            if (err) {
-                this.setState({loading: false});
-            } else {
-                console.log(batchItemResponse); 
-                this.setState({ 
-                    alert: { 
-                        type: 'alert-success', 
-                        message: 'Payments applied', 
-                        strong: 'Success! '
-                    },
-                    payments: this.state.payments.clear() 
-                });
-                this._getCustomerData(1, true); 
-            }
-        }.bind(this)); 
-    },
+        
+    }
     
     _toggleExpanded() {
-        this.props.flux.getActions('customers').toggleExpanded();
-    },
-    
-    _deselectAll() {
-        this.setState({payments: this.state.payments.clear()})  
-    },
+      this.customerActions.toggleExpanded();
+    }
     
     _navigate(offset) {
-        this._getCustomerData(offset);
-    },
+      this.customerActions.getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset: offset, count: false});  
+    }
     
     render() {
         console.log('render Customers. ');
         console.log('Expanded: ', this.props.expanded);
+        const pageSize = this.props.pageSize;
         var alert = this.props.alert;
         var alertDiv = alert ?
                         <Alert type={alert.type} message={alert.message} strong={alert.strong} /> : 
@@ -167,4 +153,6 @@ module.exports = React.createClass({
             </div>
         );
     }
-});
+};
+
+module.exports = Customers; 
