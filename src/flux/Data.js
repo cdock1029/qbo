@@ -1,13 +1,13 @@
 'use strict';
 
-var Qs = require('qs');
+import Qs from 'qs';
 
 module.exports = {
-  
+
   getCustomersPromise: query => {
     return Promise.resolve($.ajax('/customers?' + Qs.stringify(query)));
   },
-  
+
   getCustomers: (query, cb) => {
 
     $.ajax('/customers?' + Qs.stringify(query)).done(data => {
@@ -23,7 +23,7 @@ module.exports = {
     });
 
   },
-  
+
   submitPaymentsPromise: data => {
     return Promise.resolve($.ajax('/payment',
     {
@@ -34,9 +34,9 @@ module.exports = {
       data: {
         payments: data
       }
-    }));  
+    }));
   },
-  
+
   submitPayments: (data, cb) => {
 
     console.log('submitPayments:', data);

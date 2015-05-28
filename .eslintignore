@@ -1,6 +1,3 @@
 node_modules/**
 lib/**
 src/bundle.js
-src/main.js
-src/components/**
-src/flux/Data.js

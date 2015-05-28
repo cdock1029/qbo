@@ -3,6 +3,7 @@
     "blockBindings": true,
     "arrowFunctions": true
   },
+  "parser": "babel-eslint",
   "env": {
     "node": true
   },
@@ -10,6 +11,9 @@
     "quotes": [1, "single", "avoid-escape"],
     "no-unused-vars": [1, { "vars": "all", "args": "none" }],
     "camelcase": [2, {properties: "never"}],
-    "no-var": 2
+    "no-var": 2,
+    "comma-spacing": 1,
+    "key-spacing": 0,
+    "new-cap": [2, { "capIsNewExceptions": ["List", "Map"] }]
   }
 }

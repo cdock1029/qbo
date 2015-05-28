@@ -1,27 +1,32 @@
 'use strict';
 
-var React = require('react/addons');
-var {DropdownButton, MenuItem} = require('react-bootstrap');
+import React from 'react/addons';
+import {DropdownButton, MenuItem} from 'react-bootstrap';
+import _ from 'underscore';
 
-var _ = require('underscore');
 
+const CompanyDropdownButton = React.createClass({
 
-module.exports = React.createClass({
-    
-    render: function() {
-        
-        var companies = this.props.companies;
-        var selectedLabel;
-        var menuItems = _(companies).map( (company, index) => {
-            if (company.isSelected) {
-                selectedLabel = company.name + ' ';
-            }  
-            return <MenuItem className="companyItems" eventKey={index} key={index}>{company.name}</MenuItem>;   
-        }); 
-        return(
-            <DropdownButton title={selectedLabel} data-toggle="dropdown">
-                {menuItems} 
-            </DropdownButton>
-        ); 
+    propTypes: {
+      companies: React.PropTypes.array
+    },
+
+    render() {
+
+      const companies = this.props.companies;
+      let selectedLabel;
+      const menuItems = _(companies).map( (company, index) => {
+          if (company.isSelected) {
+              selectedLabel = company.name + ' ';
+          }
+          return <MenuItem className="companyItems" eventKey={index} key={index}>{company.name}</MenuItem>;
+      });
+      return (
+          <DropdownButton data-toggle="dropdown" title={selectedLabel}>
+              {menuItems}
+          </DropdownButton>
+      );
     }
 });
+
+module.exports = CompanyDropdownButton;

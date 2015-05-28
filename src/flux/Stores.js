@@ -5,24 +5,24 @@ import Immutable from 'immutable';
 import { PAGE_SIZE } from './Constants';
 
 class AlertStore extends Store {
-  
+
   constructor(flux) {
     super();
     const alertActionIds = flux.getActionIds('alerts');
-    
+
     this.register(alertActionIds.addAlert, this.handleNewAlert);
     this.register(alertActionIds.removeAlert, this.handleRemoveAlert);
     this.state = {
       alerts: []
     };
   }
-  
+
   handleNewAlert(message) {
     this.setState({
       alerts: this.state.alerts.concat(message)
     });
   }
-  
+
   handleRemoveAlert(index) {
     this.setState({
       alerts: this.state.alerts.splice(index, 1)
@@ -31,16 +31,16 @@ class AlertStore extends Store {
 }
 
 class CustomerStore extends Store {
-   
+
   constructor(flux) {
-    super();   
-    this.FLUX = flux; 
+    super();
+    this.FLUX = flux;
     const customerActionIds = flux.getActionIds('customers');
-    
+
     this.registerAsync(customerActionIds.getCustomers, this.setLoading, this.handleCustomers, this.handleJqueryError);
     this.register(customerActionIds.updatePayments, this.updatePayments);
     this.register(customerActionIds.toggleExpanded, this.toggleExpanded);
-    
+
     this.state = {
       customers: Immutable.List(),
       invoices: Immutable.Map(),
@@ -51,48 +51,47 @@ class CustomerStore extends Store {
       errors: []
     };
   }
-  
+
   setLoading() {
-    this.setState({ loading: true });  
+    this.setState({ loading: true });
   }
-  
+
   toggleExpanded() {
-    console.log('store toggleExpanded');
-    this.setState({ expanded: !this.state.expanded });  
+    this.setState({ expanded: !this.state.expanded });
   }
-  
+
   updatePayments({customerId, invoices}) {
-      
+
     let paymentsMap = this.state.payments;
     let updatedMap;
-        
+ 
     if (invoices){//customerObject) {
-        updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices}); 
+        updatedMap = paymentsMap.set(customerId, {customerId: customerId, invoices: invoices});
     } else {
         updatedMap = paymentsMap.delete(customerId);//, {customerId: customerId, invoices: invoices});
     }
     //console.log('Customers _updatePayments  Map.get:', updatedMap.get(customerId));
     this.setState({ payments: updatedMap });
   }
-  
+
   handleJqueryError(error) {
     console.log('handleJqueryError: ' + error);
     //this.FLUX.getActions('alerts').addAlert(error);
     this.setState({ errors: this.state.errors.concat(error) });
   }
-  
+
   getErrors() {
     return this.state.errors;
   }
-   
+
   setAlert(message) {
     //TODO
     console.log(message);
   }
- 
+
   submitPayments() {
     this.setState({loading: true});
-    var payments = this.state.payments.toObject(); 
+    let payments = this.state.payments.toObject(); 
     Data.submitPayments(payments, function(err, batchItemResponse) {
         if (err) {
             this.setState({loading: false});
