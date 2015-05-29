@@ -7,7 +7,7 @@ module.exports = [AuthCookie, {
   register: require('crumb'),
   options: {
     cookieOptions: {
-      isSecure: true
+      isSecure: process.env.ENV !== 'local'
     },
     restful: true
   }

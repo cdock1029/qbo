@@ -20,7 +20,7 @@ server.register(plugins, (err) => {
   server.auth.strategy('user', 'cookie', {
     password: 'emGWVAqponcmoscHSKJOEWEEal2h2JLssf205HlJS',
     cookie: 'user',
-    isSecure: true,
+    isSecure: process.env.ENV !== 'local',
     redirectTo: '/login',
     clearInvalid: true
   });
