@@ -3,6 +3,7 @@
 import React from 'react/addons';
 import classnames from 'classnames';
 import Customer from './Customer';
+import FluxComponent from 'flummox/component';
 import Spinner from 'react-spinkit';
 import {Table, ButtonToolbar, Button, Row, Col} from 'react-bootstrap';
 import _ from 'underscore';
@@ -12,70 +13,51 @@ const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 const Customers = React.createClass({
 
     propTypes: {
-      customers: React.PropTypes.array.isRequired,
-      expanded: React.PropTypes.bool.isRequired,
-      flux: React.PropTypes.func.isRequired,
-      invoices: React.PropTypes.object.isRequired,
-      loading: React.PropTypes.bool.isRequired,
+      customers: React.PropTypes.array,
+      flux: React.PropTypes.object,
+      loading: React.PropTypes.bool,
       next: React.PropTypes.string,
       pageSize: React.PropTypes.number.isRequired,
-      payments: React.PropTypes.object.isRequired,
+      payments: React.PropTypes.object,
       previous: React.PropTypes.string,
       totalCount: React.PropTypes.number
     },
 
-    getInitialState() {
-      return {};
-    },
-
     componentDidMount() {
-      this.customerActions = this.props.flux.getActions('customers');
-    },
-
-    shouldComponentUpdate(nextProps, nextState) {
-      return true;
-      /* (
-            ! Immutable.is(this.props.customers, nextProps.customers) ||
-            ! Immutable.is(this.props.payments, nextProps.payments) ||
-            ! Immutable.is(this.props.invoices, nextProps.invoices) ||
-            nextProps.expanded !== this.props.expanded ||
-            nextProps.isSubmitting !== this.props.isSubmitting ||
-            nextProps.loading !== this.props.loading ||
-            nextProps.previous !== this.props.previous ||
-            nextProps.next !== this.props.next ||
-            nextProps.totalCount !== this.props.totalCount
-        );*/
-    },
-
-    _updatePayments(customerId, invoices) {
-      this.customerActions.updatePayments(customerId, invoices);
+      this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset: 1, count: true});
     },
 
     _submitPayments() {//will have customerRef,List of amount / inv Ids
-
+      //const customerStore = this.props.flux.getStore('customers');
+      //const payments = customerStore.getPayments();
+      this.props.flux.getActions('customers').submitPayments(this.props.payments);
     },
 
     _toggleExpanded() {
-      this.customerActions.toggleExpanded();
+      this.props.flux.getActions('customers').toggleExpanded();
     },
 
     _navigate(offset) {
-      this.customerActions.getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false});
+      console.log('_navigate', offset);
+      this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false});
     },
 
     render() {
+        console.log('CustomerS render');
         const pageSize = this.props.pageSize;
         const custs = this.props.customers.map((c, index) => {
-            let selected = this.props.payments.has(c.Id);
-            return (<Customer
-                    callback={this._updatePayments}
-                    count={index + 1}
-                    customer={c}
-                    expanded={this.props.expanded}
-                    invoices={this.props.invoices.get(c.Id)}
-                    isSubmitting={false/*selected && this.state.loading*/}
-                    key={index}
-                    selected={selected} />);
+            return (
+              <FluxComponent connectToStores={{
+                customers: store => ({
+                  expanded: store.getExpanded(),
+                  invoices: store.getInvoices(this.props.customers[index] && this.props.customers[index].Id),
+                  selected: store.getIsSelected(this.props.customers[index] && this.props.customers[index].Id)
+                })
+              }} key={index}>
+                <Customer
+                  count={index + 1}
+                  customer={c} />
+              </FluxComponent>);
 
         });
         const spinner = (
@@ -143,7 +125,7 @@ const Customers = React.createClass({
             <Table condensed>
                 <thead>
                     <tr>
-                       {_.map(['Address', 'Customer', 'Invoices', 'Open Balance'], (h, i) => {
+                       {_.map(['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'], (h, i) => {
                             return <th key={i}>{h}</th>;
                        })}
                     </tr>

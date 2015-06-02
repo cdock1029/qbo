@@ -16,7 +16,7 @@ flux.addListener('dispatch', payload => {
 React.render(
   <FluxComponent connectToStores={{
     customers: store => ({
-      alerts: store.getErrors()
+      alerts: store.getAlerts()
     })
   }} flux={flux}>
     <App />

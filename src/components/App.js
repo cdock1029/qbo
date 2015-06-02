@@ -14,13 +14,6 @@ const App = React.createClass({
       alerts: React.PropTypes.array
     },
 
-    getInitialState() {
-      return {
-        alert: null,
-        loading: false
-      };
-    },
-
     _hideAlert() {
       this.setState({alert: null});
     },
@@ -34,23 +27,21 @@ const App = React.createClass({
     },
 
     render() {
-
-        const loading = this.state.loading ?
+        /*const loading = this.state.loading ?
             <Row>
                 <Col sm={4} smPush={4}>
                     <Spinner spinnerName='three-bounce'/>
                 </Col>
             </Row> :
-            null;
+            null;*/
 
-        const alerts = this.props.alerts.map(function(message, index) {
-          return (<Alert bsStyle='danger' key={index}>
-            {message}
+        const alerts = this.props.alerts.map(function(alert, index) {
+          return (<Alert bsStyle={alert.style} key={index}>
+            {alert.message}
           </Alert>);
         });
         return (
             <div>
-                {loading}
                 {alerts}
                 <FluxComponent>
                   <CustomersWrapper />
