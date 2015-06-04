@@ -4,8 +4,9 @@ import React from 'react/addons';
 import classnames from 'classnames';
 import FluxComponent from 'flummox/component';
 import CustomersWrapper from './CustomersWrapper';
-import {Row, Col, Alert, Navbar, Nav, NavItem, Pager, PageItem} from 'react-bootstrap';
+import {ButtonToolbar, Button, Row, Col, Alert, Navbar} from 'react-bootstrap';
 import _ from 'underscore';
+import Spinner from 'react-spinkit';
 const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 const App = React.createClass({
@@ -16,8 +17,17 @@ const App = React.createClass({
       loading: React.PropTypes.bool,
       next: React.PropTypes.string,
       pageSize: React.PropTypes.number,
+      payments: React.PropTypes.object,
       previous: React.PropTypes.string,
       totalCount: React.PropTypes.number
+    },
+
+    _submitPayments() {
+      //const payments = this.props.flux.getStore('customers').getPayments();
+
+      if (!_.isEmpty(this.props.payments)) {
+        this.props.flux.getActions('customers').submitPayments(this.props.payments);
+      }
     },
 
     _dismissAlert(index) {
@@ -32,6 +42,10 @@ const App = React.createClass({
     _navigate(offset) {
       console.log('_navigate', offset);
       this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false});
+    },
+
+    _deselectAll() {
+      this.props.flux.getActions('customers').clearAllPayments();
     },
 
     render() {
@@ -82,14 +96,22 @@ const App = React.createClass({
             </ul>
           </nav>);
       }
-
+      const spinner = (
+        <Button className="navbar-btn" disabled style={{display: this.props.loading ? 'inline-block' : 'none'}}>
+          <Spinner noFadeIn spinnerName='three-bounce'/>
+        </Button>);
         return (
           <div>
             <Navbar className="subNavbar" fixedTop>
-              <div class="container-fluid">
-                <div className="collapse navbar-collapse">
-                  <button type="button" class="btn btn-default navbar-btn">Pay Pay</button>
-                </div>
+              <div className="container-fluid">
+                <nav className="text-center">
+                  <ButtonToolbar>
+                    {/*<Button bsStyle="primary" className="navbar-btn" disabled={_.isEmpty(this.props.payments)} onClick={this._deselectAll}>Deselect All</Button>
+                    <Button bsStyle="info" className="navbar-btn" onClick={this._toggleExpanded}>Collapse/Expand</Button>*/}
+                    <Button bsStyle="info" className="navbar-btn" disabled={_.isEmpty(this.props.payments)} onClick={this._submitPayments}>Pay Selected</Button>
+                    {spinner}
+                  </ButtonToolbar>
+                </nav>
               </div>
             </Navbar>
             <Row>

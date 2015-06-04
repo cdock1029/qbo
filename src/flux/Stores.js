@@ -40,6 +40,7 @@ class CustomerStore extends Store {
     this.register(actions.toggleExpanded, this.toggleExpanded);
     this.registerAsync(actions.submitPayments, this.setLoading, this.handleSubmitPayments, this.handleJqueryError);
     this.register(actions.removeAlert, this.handleRemoveAlert);
+    this.register(actions.clearAllPayments, this.clearAllPayments);
 
     this.state = {
       customers: [],
@@ -56,6 +57,12 @@ class CustomerStore extends Store {
 
   static getPageSize() {
     return 2;
+  }
+
+  clearAllPayments() {
+    if (!$.isEmptyObject(this.state.payments)) {
+      this.setState({payments: {}});
+    }
   }
 
   getCustomers() {

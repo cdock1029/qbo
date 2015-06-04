@@ -18,6 +18,7 @@ React.render(
     customers: store => ({
       alerts: store.getAlerts(),
       loading: store.getLoading(),
+      payments: store.getPayments(),
       previous: store.getPrevious(),
       next: store.getNext(),
       totalCount: store.getTotalCount()

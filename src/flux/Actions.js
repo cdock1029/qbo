@@ -33,13 +33,15 @@ class CustomerActions extends Actions {
   }
 
   toggleExpanded() {
-    console.log('actions toggleExpanded');
     return true;
   }
 
   removeAlert(index) {
-    console.log('actions removeAlert(%d', index);
     return index;
+  }
+
+  clearAllPayments() {
+    return true;
   }
 }
 

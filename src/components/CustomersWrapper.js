@@ -19,12 +19,7 @@ const CustomersWrapper = React.createClass({
     return (
       <FluxComponent connectToStores={{
         customers: store => ({
-          customers: store.getCustomers(),
-          next: store.getNext(),
-          previous: store.getPrevious(),
-          payments: store.getPayments(),
-          loading: store.getLoading(),
-          totalCount: store.getTotalCount()
+          customers: store.getCustomers()
         })
       }}>
         <Customers />

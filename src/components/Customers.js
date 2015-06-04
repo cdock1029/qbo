@@ -3,7 +3,6 @@
 import React from 'react/addons';
 import Customer from './Customer';
 import FluxComponent from 'flummox/component';
-import Spinner from 'react-spinkit';
 import {Table, ButtonToolbar, Button, Row, Col} from 'react-bootstrap';
 import _ from 'underscore';
 
@@ -13,19 +12,9 @@ const Customers = React.createClass({
 
     propTypes: {
       customers: React.PropTypes.array,
-      flux: React.PropTypes.object,
-      loading: React.PropTypes.bool,
-      next: React.PropTypes.string,
-      payments: React.PropTypes.object,
-      previous: React.PropTypes.string,
-      totalCount: React.PropTypes.number
+      flux: React.PropTypes.object
     },
 
-    _submitPayments() {//will have customerRef,List of amount / inv Ids
-      //const customerStore = this.props.flux.getStore('customers');
-      //const payments = customerStore.getPayments();
-      this.props.flux.getActions('customers').submitPayments(this.props.payments);
-    },
 
     render() {
         console.log('CustomerS render');
@@ -44,23 +33,9 @@ const Customers = React.createClass({
               </FluxComponent>);
 
         });
-        const spinner = (
-          <Button disabled style={{display: this.props.loading ? 'inline-block' : 'none'}}>
-            <Spinner noFadeIn spinnerName='three-bounce'/>
-          </Button>);
+
         return (
           <Col lg={9}>
-              <Row>
-                <div className="col-md-6 col-md-offset-6">
-                  <ButtonToolbar>
-                    <Button bsStyle="primary" disabled={this.props.payments.size < 1} onClick={this._deselectAll}>Deselect All</Button>
-                    <Button bsStyle="info" onClick={this._toggleExpanded}>Collapse/Expand</Button>
-                    <Button bsStyle="success" disabled={this.props.payments.size < 1} onClick={this._submitPayments}>Pay Selected</Button>
-                    {spinner}
-                  </ButtonToolbar>
-                </div>
-              </Row>
-
               <Row>
                 <Table condensed>
                   <thead>
