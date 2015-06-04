@@ -35,9 +35,9 @@ const Customers = React.createClass({
         });
 
         return (
-          <Col lg={9}>
+          <Col lg={10} lgOffset={1}>
               <Row>
-                <Table condensed>
+                <Table condensed responsive>
                   <thead>
                     <tr>
                      {_.map(['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'], (h, i) => {
