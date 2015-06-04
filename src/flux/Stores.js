@@ -2,7 +2,6 @@
 
 import { Store } from 'flummox';
 import Immutable from 'immutable';
-import { PAGE_SIZE } from './Constants';
 
 class AlertStore extends Store {
 
@@ -40,7 +39,7 @@ class CustomerStore extends Store {
     this.register(actions.updatePayments, this.updatePayments);
     this.register(actions.toggleExpanded, this.toggleExpanded);
     this.registerAsync(actions.submitPayments, this.setLoading, this.handleSubmitPayments, this.handleJqueryError);
-    //this.register(customerActionIds.)
+    this.register(actions.removeAlert, this.handleRemoveAlert);
 
     this.state = {
       customers: [],
@@ -50,10 +49,15 @@ class CustomerStore extends Store {
       loading: false,
       alerts: []
     };
-    /*window.STATE = function() {
+    window.STATE = function() {
       return this.state;
-    }.bind(this);*/
+    }.bind(this);
   }
+
+  static getPageSize() {
+    return 2;
+  }
+
   getCustomers() {
     return this.state.customers;
   }
@@ -116,6 +120,7 @@ class CustomerStore extends Store {
   }
 
   getAlerts() {
+    console.log('store getAlerts(): ', this.state.alerts);
     return this.state.alerts;
   }
 
@@ -158,6 +163,16 @@ class CustomerStore extends Store {
       invoices: data.Invoice,
       next: next,
       previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults : 1)
+    });
+  }
+
+  handleRemoveAlert(index) {
+    console.log('store handleRemoveAlert(%d)', index);
+    console.log('previous alerts state: ', this.state.alerts);
+    let a = this.state.alerts;
+    a.splice(index, 1);//returns removed portion
+    this.setState({
+      alerts: a
     });
   }
 

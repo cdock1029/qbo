@@ -3,7 +3,7 @@
 import React from 'react/addons';
 import FluxComponent from 'flummox/component';
 import Customers from './Customers';
-import { PAGE_SIZE } from '../flux/Constants';
+import { CustomerStore } from '../flux/Stores';
 
 const CustomersWrapper = React.createClass({
 
@@ -12,7 +12,7 @@ const CustomersWrapper = React.createClass({
   },
 
   componentDidMount() {
-    //this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: PAGE_SIZE, offset: 1, count: true});
+    this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: CustomerStore.getPageSize(), offset: 1, count: true});
   },
 
   render() {
@@ -27,7 +27,7 @@ const CustomersWrapper = React.createClass({
           totalCount: store.getTotalCount()
         })
       }}>
-        <Customers pageSize={PAGE_SIZE} />
+        <Customers />
       </FluxComponent>
     );
   }

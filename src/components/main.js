@@ -4,6 +4,7 @@ import React from 'react/addons';
 import App from './App';
 import FluxComponent from 'flummox/component';
 import AppFlux from '../flux/Flux';
+import { CustomerStore } from '../flux/Stores';
 
 const flux = new AppFlux();
 flux.addListener('dispatch', payload => {
@@ -12,14 +13,17 @@ flux.addListener('dispatch', payload => {
 /*flux.addListener('error', payload => {
     console.log('Flux Error: ', payload);
 });*/
-
 React.render(
   <FluxComponent connectToStores={{
     customers: store => ({
-      alerts: store.getAlerts()
+      alerts: store.getAlerts(),
+      loading: store.getLoading(),
+      previous: store.getPrevious(),
+      next: store.getNext(),
+      totalCount: store.getTotalCount()
     })
   }} flux={flux}>
-    <App />
+    <App pageSize={CustomerStore.getPageSize()} />
   </FluxComponent>,
   document.getElementById('content')
 );

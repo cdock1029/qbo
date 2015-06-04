@@ -36,24 +36,15 @@ class CustomerActions extends Actions {
     console.log('actions toggleExpanded');
     return true;
   }
-}
-
-const AlertActions = {
-
-  addAlert(alert) {
-    return alert;
-  },
 
   removeAlert(index) {
+    console.log('actions removeAlert(%d', index);
     return index;
   }
-
-};
-
+}
 
 let actions = {};
 
 actions.CustomerActions = CustomerActions;
-actions.AlertActions = AlertActions;
 
 module.exports = actions;
