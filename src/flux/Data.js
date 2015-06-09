@@ -1,7 +1,6 @@
 'use strict';
 
 import Qs from 'qs';
-import R from 'ramda';
 
 let data = {};
 

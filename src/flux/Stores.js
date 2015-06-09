@@ -1,7 +1,6 @@
 'use strict';
 
 import { Store } from 'flummox';
-import Immutable from 'immutable';
 
 class AlertStore extends Store {
 
@@ -50,9 +49,7 @@ class CustomerStore extends Store {
       loading: false,
       alerts: []
     };
-    window.STATE = function() {
-      return this.state;
-    }.bind(this);
+
   }
 
   static getPageSize() {
@@ -161,7 +158,7 @@ class CustomerStore extends Store {
     } else if (data.totalCount) {
       next = data.maxResults + data.startPosition - 1 === data.totalCount ? null : data.startPosition + data.maxResults;
     } else {
-      next = data.maxResults === PAGE_SIZE ? data.startPosition + data.maxResults : null;
+      next = data.maxResults === CustomerStore.getPageSize() ? data.startPosition + data.maxResults : null;
     }
     this.setState({
       totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : this.state.totalCount,

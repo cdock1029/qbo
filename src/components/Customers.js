@@ -3,7 +3,7 @@
 import React from 'react/addons';
 import Customer from './Customer';
 import FluxComponent from 'flummox/component';
-import {Table, ButtonToolbar, Button, Row, Col} from 'react-bootstrap';
+import {Table, Row, Col} from 'react-bootstrap';
 import _ from 'underscore';
 
 const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;

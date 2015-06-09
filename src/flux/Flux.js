@@ -1,8 +1,8 @@
 'use strict';
 
 import Flux from 'flummox';
-import { CustomerActions, AlertActions } from './Actions';
-import { CustomerStore, AlertStore } from './Stores';
+import { CustomerActions } from './Actions';
+import { CustomerStore } from './Stores';
 
 class AppFlux extends Flux {
 

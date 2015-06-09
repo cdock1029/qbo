@@ -1,7 +1,7 @@
 'use strict';
 
 import React from 'react/addons';
-import {DropdownButton, MenuItem, Navbar, Nav, NavItem, Button} from 'react-bootstrap';
+import {DropdownButton, MenuItem, Navbar, Nav, NavItem} from 'react-bootstrap';
 import _ from 'underscore';
 
 
