@@ -97,6 +97,8 @@ module.exports = [{
         field: 'Balance',
         value: 0,
         operator: '>'
+      }, {
+        fields: request.query.fields
       }];
 
       getCount(qbo.findCustomers, qbo, request.query.count, queryParams).then((count) => {

@@ -12,7 +12,7 @@ const CustomersWrapper = React.createClass({
   },
 
   componentDidMount() {
-    this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: CustomerStore.getPageSize(), offset: 1, count: true});
+    this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: CustomerStore.getPageSize(), offset: 1, count: true, fields: ['CompanyName', 'DisplayName', 'Balance']});
   },
 
   render() {
