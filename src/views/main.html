@@ -1,65 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Waldon Management</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-    <link rel="stylesheet" href="src/styles/app.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Waldon Management</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <link rel="stylesheet" href="src/styles/app.css">
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-6 col-md-push-6">
-                <div class="btn-toolbar pull-right" role="toolbar">
-                    {{{ companySelectForm }}}
-                    <div class="btn-group" role="group">
-                        <a class="btn btn-info" href="/logout">Logout</a>
-                    </div>
-                    <div class="btn-group" role="group">
-                        <ipp:connectToIntuit></ipp:connectToIntuit>
-                    </div>
-                </div>
+<!--<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Company options</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Waldon Managment</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li>{{{ companySelectForm }}}</li>
+                <li><form action="/logout" method="get"><button class="btn btn-info navbar-btn">Logout</button></form></li>
+                <li><ipp:connectToIntuit></ipp:connectToIntuit></li>
+            </ul>
+        </div>
+    </div>
+</nav>-->
+
+<!--<div class="row">
+    <div class="col-md-6 col-md-push-6">
+        <div class="btn-toolbar pull-right" role="toolbar">
+            {{{ companySelectForm }}}
+            <div class="btn-group" role="group">
+                <a class="btn btn-info" href="/logout">Logout</a>
+            </div>
+            <div class="btn-group" role="group">
+                <ipp:connectToIntuit></ipp:connectToIntuit>
             </div>
         </div>
-        <div id="content" class="row"></div>
     </div>
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-    <script src="src/bundle.js"></script>
-    <script type="text/javascript" src="{{appCenter}}/Content/IA/intuit.ipp.anywhere-1.3.1.js"></script>
-    <script defer type="text/javascript">
-        intuit.ipp.anywhere.setup({
-            grantUrl: '{{grantUrl}}',
-            datasources: {
-                quickbooks : true,  // set to false if NOT using Quickbooks API
-                payments : false// set to true if using Payments API
-            }
-        });
-    </script>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('.companyItems').click(function(e) {
-                
-                e.preventDefault();
-                
-                var value = $('.companyItems').index(this);
-                
-                $('<form action="/company" method="post"></form>')
-                    .append($('<input name="crumb" value="{{crumb}}" type="hidden"></input>'))
-                    .append($('<input name="company"></input>').val(value))
-                    .appendTo('body')
-                    .submit();
-            });
-            window.crumb = function(value) {
-                if (value) {
-                    this.value = value;    
-                } else {
-                    return this.value || '{{crumb}}';
-                }
-            };
-        });
-       
-    </script>
+</div>-->
+
+{{{ companySelectForm }}}
+<div class="container-fluid">
+  <div id="content"></div>
+</div>
+<script type="text/javascript">
+  window.crumb = function (value) {
+    if (value) {
+      this.value = value;
+    } else {
+      return this.value || '{{crumb}}';
+    }
+  };
+</script>
+<script src="https://code.jquery.com/jquery-latest.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script src="src/bundle.js"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+
+    $('.companyItems').click(function (e) {
+
+      e.preventDefault();
+
+      var value = $('.companyItems').index(this);
+
+      $('<form action="/company" method="post"></form>')
+        .append($('<input name="crumb" value="{{crumb}}" type="hidden"/>'))
+        .append($('<input name="company"/>').val(value))
+        .appendTo('body')
+        .submit();
+    });
+  });
+
+</script>
+<script type="text/javascript" src="{{appCenter}}/Content/IA/intuit.ipp.anywhere-1.3.3.js"></script>
+<script type="text/javascript">
+  intuit.ipp.anywhere.setup({
+    grantUrl: '{{grantUrl}}',
+    datasources: {
+      quickbooks: true,  // set to false if NOT using Quickbooks API
+      payments: false// set to true if using Payments API
+    }
+  });
+</script>
 </body>
 </html>

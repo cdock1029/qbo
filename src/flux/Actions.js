@@ -1,53 +1,52 @@
 'use strict';
 
-import { getCustomersPromise } from './Data';
+import { getCustomersPromise, submitPaymentsPromise } from './Data';
+import { Actions } from 'flummox';
 
-const CustomerActions = {
+class CustomerActions extends Actions {
 
-    /* jshint ignore:start */async/* jshint ignore:end */
-    getCustomers(query) {
+  constructor() {
+    super();
+  }
+
+  async getCustomers(query) {
     console.log('CustomerActions getCustomers(..)');
+
     try {
-      return/* jshint ignore:start */ await /* jshint ignore:end */getCustomersPromise(query);
+      return await getCustomersPromise(query);
     } catch (err) {
       throw err.responseText;
     }
-  },
+  }
 
   updatePayments(customerId, invoices) {
-    return {
-      customerId: customerId,
-      invoices: invoices
-    };
-  },
+    return { customerId, invoices };
+  }
 
-  submitPayments() {
+  async submitPayments(payments) {
     console.log('actions submitPayments');
-    return true;
-  },
+    try {
+      return await submitPaymentsPromise(payments);
+    } catch (err) {
+      throw err.responseText;
+    }
+  }
 
   toggleExpanded() {
-    console.log('actions toggleExpanded');
     return true;
   }
-};
-
-const AlertActions = {
-
-  addAlert(message) {
-    return message;
-  },
 
   removeAlert(index) {
     return index;
   }
 
-};
-
+  clearAllPayments() {
+    return true;
+  }
+}
 
 let actions = {};
 
 actions.CustomerActions = CustomerActions;
-actions.AlertActions = AlertActions;
 
 module.exports = actions;

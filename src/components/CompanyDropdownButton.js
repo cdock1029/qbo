@@ -1,7 +1,7 @@
 'use strict';
 
 import React from 'react/addons';
-import {DropdownButton, MenuItem} from 'react-bootstrap';
+import {DropdownButton, MenuItem, Navbar, Nav, NavItem, Button} from 'react-bootstrap';
 import _ from 'underscore';
 
 
@@ -22,9 +22,14 @@ const CompanyDropdownButton = React.createClass({
           return <MenuItem className="companyItems" eventKey={index} key={index}>{company.name}</MenuItem>;
       });
       return (
-          <DropdownButton data-toggle="dropdown" title={selectedLabel}>
+        <Navbar brand="Waldon Management" fixedTop inverse toggleNavKey={0}>
+          <Nav collapsable defaultNavExpanded={true} eventKey={0} right>
+            <DropdownButton data-toggle="dropdown" eventKey={1} title={selectedLabel}>
               {menuItems}
-          </DropdownButton>
+            </DropdownButton>
+            <NavItem eventKey={2} href="/logout"><span className="glyphicon glyphicon-log-out"></span> Logout</NavItem>
+          </Nav>
+        </Navbar>
       );
     }
 });

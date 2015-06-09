@@ -8,7 +8,7 @@ import accounting from 'accounting';
 
 const Invoices = React.createClass({
 
-    mixins: [React.addons.PureRenderMixin],
+    //mixins: [React.addons.PureRenderMixin],
 
     render() {
       const panels = _.map(this.props.invoices, function(invoice, index) {

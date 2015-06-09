@@ -51,7 +51,7 @@
     "build": "browserify src/components/main.js -o src/bundle.js",
     "prestart": "npm run build && npm run test && npm run lint",
     "watch": "watchify src/components/main.js -o src/bundle.js -dv",
-    "dev": "npm run watch & node --debug=15454 app.js",
+    "dev": "npm run watch & node app.js",
     "start": "node app.js"
   },
   "browserify": {

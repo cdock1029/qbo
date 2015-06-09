@@ -1,7 +1,7 @@
 'use strict';
 
 const QuickBooks = require('node-quickbooks');
-const R = require('ramda');
+const {compose, converge, pluck, prop, flatten, map, union, reduce} = require('ramda');
 const Q = require('q');
 
 
@@ -26,7 +26,7 @@ QBO.init = function init(consumerKey, consumerSecret, useSandbox, useDebug) {
 
 };
 
-QBO.createPaymentLine = R.map(function(inv) {
+QBO.createPaymentLine = map(function(inv) {
   return {
     Amount: inv.Balance,
     LinkedTxn: [{
@@ -36,7 +36,7 @@ QBO.createPaymentLine = R.map(function(inv) {
   };
 });
 
-QBO.calculateTotal = R.reduce(function(acc, inv) {
+QBO.calculateTotal = reduce(function(acc, inv) {
   return parseFloat(inv.Balance) + acc;
 }, 0);
 
@@ -45,7 +45,7 @@ QBO.calculateTotal = R.reduce(function(acc, inv) {
  * @param {number} totalAmt total value of Payment
  * @return {!Object} partial Payment does not include CustomerRef
  */
-QBO.createPartialPayment = R.converge(function(line, totalAmt) {
+QBO.createPartialPayment = converge(function(line, totalAmt) {
   return {
     Line: line,
     TotalAmt: Math.round(totalAmt * 100) / 100
@@ -103,7 +103,7 @@ QBO.batchPromise = function batchPromise(qbo, items) {
 QBO.getCount = function getCount(fn, qbo, countParam, queryParams) {
 
   const deferred = Q.defer();
-  const combined = R.union([{
+  const combined = union([{
     count: true
   }], queryParams);
 
@@ -126,5 +126,11 @@ QBO.getCount = function getCount(fn, qbo, countParam, queryParams) {
   return deferred.promise;
 
 };
+const getCustomerRef = compose(map(prop('value')), map(prop('CustomerRef')));
+const getTxnIds = compose(pluck('TxnId'), flatten, pluck('LinkedTxn'), flatten, map(prop('Line')));
+
+QBO.extractPaymentsMap = compose(converge(function(customers, ids) {
+  return {customers: customers, transactionIds: ids};
+}, getCustomerRef, getTxnIds), pluck('Payment'));
 
 module.exports = QBO;

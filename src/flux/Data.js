@@ -1,67 +1,71 @@
 'use strict';
 
 import Qs from 'qs';
+import R from 'ramda';
 
-module.exports = {
+let data = {};
 
-  getCustomersPromise: query => {
-    return Promise.resolve($.ajax('/customers?' + Qs.stringify(query)));
-  },
+data.getCustomersPromise = query => {
+  return Promise.resolve($.ajax('/customers?' + Qs.stringify(query)));
+};
 
-  getCustomers: (query, cb) => {
+data.getCustomers = (query, cb) => {
 
-    $.ajax('/customers?' + Qs.stringify(query)).done(data => {
+  $.ajax('/customers?' + Qs.stringify(query)).done(params => {
 
-      if (data.crumb) {
-        window.crumb(data.crumb);
-      }
-      cb(null, data.QueryResponse); //array of customers
+    if (params.crumb) {
+      window.crumb(params.crumb);
+    }
+    cb(null, params.QueryResponse); //array of customers
 
-    }).fail((jqXHR, textStatus, errorThrown) => {
+  }).fail((jqXHR, textStatus, errorThrown) => {
 
-      cb(errorThrown, null);
-    });
-
-  },
-
-  submitPaymentsPromise: data => {
-    return Promise.resolve($.ajax('/payment',
-    {
-      method: 'POST',
-      headers: {
-        'X-CSRF-Token': window.crumb()
-      },
-      data: {
-        payments: data
-      }
-    }));
-  },
-
-  submitPayments: (data, cb) => {
-
-    console.log('submitPayments:', data);
-    $.ajax('/payment', {
-      method: 'POST',
-      headers: {
-        'X-CSRF-Token': window.crumb()
-      },
-      data: {
-        payments: data
-      }
-    }).done((response) => {
-
-      cb(null, response);
-    });
-  },
-  getInvoices: (query, cb) => {
-
-    $.ajax('/invoices?' + Qs.stringify(query)).done((data) => {
-
-      if (data.crumb) {
-        window.crumb(data.crumb);
-      }
-      cb(null, data.QueryResponse.Invoice);
-    });
-  }
+    cb(errorThrown, null);
+  });
 
 };
+
+data.submitPaymentsPromise = params => {
+
+  return Promise.resolve($.ajax('/payment',
+  {
+    method: 'POST',
+    headers: {
+      'X-CSRF-Token': window.crumb()
+    },
+    data: {
+      payments: params
+    }
+  }));
+};
+
+
+data.submitPayments = (params, cb) => {
+
+  console.log('submitPayments:', params);
+  $.ajax('/payment', {
+    method: 'POST',
+    headers: {
+      'X-CSRF-Token': window.crumb()
+    },
+    data: {
+      payments: params
+    }
+  }).done((response) => {
+
+    cb(null, response);
+  });
+};
+
+data.getInvoices = (query, cb) => {
+
+  $.ajax('/invoices?' + Qs.stringify(query)).done((response) => {
+
+    if (response.crumb) {
+      window.crumb(response.crumb);
+    }
+    cb(null, response.QueryResponse.Invoice);
+  });
+};
+
+module.exports = data;

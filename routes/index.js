@@ -57,7 +57,7 @@ module.exports = [{
   config: {
     handler: (request, reply) => {
       let companies = request.auth.credentials.companies;
-      let companySelectForm = React.renderToStaticMarkup(new CompanyDropdownButton({
+      let companySelectForm = React.renderToString(new CompanyDropdownButton({
         companies: companies
       }));
       let ctx = {
@@ -97,6 +97,8 @@ module.exports = [{
         field: 'Balance',
         value: 0,
         operator: '>'
+      }, {
+        fields: request.query.fields
       }];
 
       getCount(qbo.findCustomers, qbo, request.query.count, queryParams).then((count) => {
