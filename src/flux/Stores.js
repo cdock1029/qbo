@@ -53,7 +53,7 @@ class CustomerStore extends Store {
   }
 
   static getPageSize() {
-    return 2;
+    return 100;
   }
 
   clearAllPayments() {
