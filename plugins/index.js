@@ -25,12 +25,12 @@ module.exports = [AuthCookie, {
     opsInterval: 1000,
     reporters: [{
       reporter: require('good-console'),
-      args: [{
+      events: {
         log: '*',
         response: '*',
         error: '*',
         request: '*'
-      }]
+      }
     }]
   }
 }];
