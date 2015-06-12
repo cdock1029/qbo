@@ -12,7 +12,7 @@ const QBO_TOKEN_SECRET = 'oauth_token_secret';
 const BATCH_SIZE = 25;
 
 let Request = require('request');
-let QuickBooks = require('../src/utils/QBO');
+let QuickBooks = require('server/utils/QBO');
 let createQBO = QuickBooks.init(CONSUMER_KEY, CONSUMER_SECRET, /*useSandbox*/process.env.ENV !== 'prod', /*useDebug*/process.env.ENV !== 'prod');
 let createPaymentForCustomer = QuickBooks.createPaymentForCustomer;
 let batchPromise = QuickBooks.batchPromise;
@@ -26,29 +26,25 @@ let db = new Parse({
 });
 
 let React = require('react');
-let CompanyDropdownButton = React.createFactory(require('../src/components/CompanyDropdownButton'));
+let CompanyDropdownButton = React.createFactory(require('lib/CompanyDropdownButton'));
 let _ = require('underscore');
 let Q = require('q');
 let Qs = require('qs');
 
 module.exports = [{
   method: 'GET',
-  path: '/src/styles/{param*}',
-  config: {
-    handler: {
-      directory: {
-        path: (request) => {
-          return 'src/styles';
-        }
-      }
+  path: '/css/{param*}',
+  handler: {
+    directory: {
+      path: 'css'
     }
   }
 }, {
   method: 'GET',
-  path: '/src/bundle.js',
+  path: '/js/bundle.js',
   config: {
     handler: {
-      file: './src/bundle.js'
+      file: 'js/bundle.js'
     }
   }
 }, {
@@ -64,7 +60,7 @@ module.exports = [{
         companies: companies,
         companySelectForm: companySelectForm
       };
-      return reply.view('main.html', ctx);
+      return reply.view('index.html', ctx);
     }
   }
 }, {

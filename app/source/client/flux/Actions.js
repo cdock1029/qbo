@@ -1,13 +1,8 @@
 'use strict';
 
 import { getCustomersPromise, submitPaymentsPromise } from './Data';
-import { Actions } from 'flummox';
 
-class CustomerActions extends Actions {
-
-  constructor() {
-    super();
-  }
+const CustomerActions = {
 
   async getCustomers(query) {
     try {
@@ -15,11 +10,11 @@ class CustomerActions extends Actions {
     } catch (err) {
       throw err.responseText;
     }
-  }
+  },
 
   updatePayments(customerId, invoices) {
     return { customerId, invoices };
-  }
+  },
 
   async submitPayments(payments) {
     console.log('actions submitPayments');
@@ -28,20 +23,20 @@ class CustomerActions extends Actions {
     } catch (err) {
       throw err.responseText;
     }
-  }
+  },
 
   toggleExpanded() {
     return true;
-  }
+  },
 
   removeAlert(index) {
     return index;
-  }
+  },
 
   clearAllPayments() {
     return true;
   }
-}
+};
 
 let actions = {};
 
