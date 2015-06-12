@@ -1,32 +1,7 @@
 'use strict';
 
 import { Store } from 'flummox';
-
-class AlertStore extends Store {
-
-  constructor(flux) {
-    super();
-    const alertActionIds = flux.getActionIds('alerts');
-
-    this.register(alertActionIds.addAlert, this.handleNewAlert);
-    this.register(alertActionIds.removeAlert, this.handleRemoveAlert);
-    this.state = {
-      alerts: []
-    };
-  }
-
-  handleNewAlert(message) {
-    this.setState({
-      alerts: this.state.alerts.concat(message)
-    });
-  }
-
-  handleRemoveAlert(index) {
-    this.setState({
-      alerts: this.state.alerts.splice(index, 1)
-    });
-  }
-}
+import Immutable from 'immutable';
 
 class CustomerStore extends Store {
 
@@ -42,12 +17,12 @@ class CustomerStore extends Store {
     this.register(actions.clearAllPayments, this.clearAllPayments);
 
     this.state = {
-      customers: [],
-      invoices: {},
-      payments: {},
+      customers: Immutable.List(),
+      invoices: Immutable.Map(),
+      payments: Immutable.Map(),
       expanded: true,
       loading: false,
-      alerts: []
+      alerts: Immutable.List()
     };
 
   }
@@ -63,85 +38,108 @@ class CustomerStore extends Store {
   }
 
   getCustomers() {
+    console.log('getCustomers');
     return this.state.customers;
   }
 
   getNext() {
+    console.log('getNext');
     return this.state.next;
   }
 
   getPrevious() {
+    console.log('getPrevious');
     return this.state.previous;
   }
 
   getTotalCount() {
+    console.log('getTotalCount');
     return this.state.totalCount;
   }
 
   getLoading() {
+    console.log('getLoading');
     return this.state.loading;
   }
 
   getPayments() {
+    console.log('getPayments');
     return this.state.payments;
   }
 
   getExpanded() {
+    console.log('getExpanded');
     return this.state.expanded;
   }
 
   getIsSelected(customerId) {
-    return this.state.payments.hasOwnProperty(customerId);
+    console.log('getIsSelected');
+    return this.state.payments.has(customerId);
   }
 
   getInvoices(customerId) {
-    return this.state.invoices[customerId];
+    console.log('getInvoices');
+    return this.state.invoices.get(customerId);
   }
 
   setLoading() {
-    this.setState({ loading: true });
+    console.log('setLoading');
+    this.setState(state => ({
+      loading: true
+    }));
   }
 
   toggleExpanded() {
-    this.setState({ expanded: !this.state.expanded });
+    console.log('toggleExpanded');
+    this.setState(state => ({
+      expanded: !state.expanded
+    }));
   }
 
   updatePayments({customerId, invoices}) {
+    console.log('updatePayments');
     let payments = this.state.payments;
 
-    if (invoices){
-        payments[customerId] = {customerId, invoices};
+    /*if (invoices){
+        payments.set(customerId, {customerId, invoices});
     } else {
-        delete payments[customerId];
-    }
-    this.setState({ payments });
+        payments.delete(customerId);
+    }*/
+    this.setState(state => ({
+      payments: invoices ? payments.set(customerId, {customerId, invoices}) : payments.delete(customerId)
+    }));
   }
 
   handleJqueryError(error) {
     console.log('handleJqueryError: ' + error);
     //this.FLUX.getActions('alerts').addAlert(error);
-    this.setState({ alerts: this.state.alerts.concat({message: error, style: 'danger'}) });
+    this.setState(state => ({
+      alerts: state.alerts.merge({message: error, style: 'danger'})
+    }));
   }
 
   getAlerts() {
-    console.log('store getAlerts(): ', this.state.alerts);
+    console.log('store getAlerts()');
     return this.state.alerts;
   }
 
   addAlert(alert) {
-    this.setState({ alerts: this.state.alerts.concat(alert) });
+    console.log('addAlert');
+    this.setState(state => ({
+      alerts: state.alerts.merge(alert)
+    }));
   }
 
   handleSubmitPayments(batchItemResponse) {
-    console.log(batchItemResponse);
-    this.setState({
-      alerts: this.state.alerts.concat({
+    console.log('handleSubmitPayments');
+    this.setState(state => ({
+      alerts: state.alerts.merge({
         type: 'success',
         message: 'Payments applied'
       }),
       loading: false,
-      payments: {}
-    });
+      payments: state.payments.clear()
+    }));
     //this._getCustomerData(1, true);
   }
 
@@ -151,7 +149,6 @@ class CustomerStore extends Store {
     }
     const data = result.QueryResponse;
     console.log('handleCustomers', data);
-
     let next = null;
     if (this.state.totalCount) {
       next = data.maxResults + data.startPosition - 1 === this.state.totalCount ? null : data.startPosition + data.maxResults;
@@ -160,24 +157,23 @@ class CustomerStore extends Store {
     } else {
       next = data.maxResults === CustomerStore.getPageSize() ? data.startPosition + data.maxResults : null;
     }
-    this.setState({
-      totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : this.state.totalCount,
+    this.setState(state => ({
+      totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : state.totalCount,
       loading: false,
       customers: data.Customer,
       invoices: data.Invoice,
       next: next,
       previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults : 1)
-    });
+    }));
   }
 
   handleRemoveAlert(index) {
     console.log('store handleRemoveAlert(%d)', index);
     console.log('previous alerts state: ', this.state.alerts);
-    let a = this.state.alerts;
-    a.splice(index, 1);//returns removed portion
-    this.setState({
-      alerts: a
-    });
+
+    this.setState(state => ({
+      alerts: state.alerts.delete(index)
+    }));
   }
 
 }
@@ -185,6 +181,5 @@ class CustomerStore extends Store {
 let stores = {};
 
 stores.CustomerStore = CustomerStore;
-stores.AlertStore = AlertStore;
 
 module.exports = stores;

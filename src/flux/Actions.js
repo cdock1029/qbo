@@ -10,8 +10,6 @@ class CustomerActions extends Actions {
   }
 
   async getCustomers(query) {
-    console.log('CustomerActions getCustomers(..)');
-
     try {
       return await getCustomersPromise(query);
     } catch (err) {

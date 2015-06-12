@@ -108,7 +108,7 @@ const App = React.createClass({
                   <ButtonToolbar>
                     {/*<Button bsStyle="primary" className="navbar-btn" disabled={_.isEmpty(this.props.payments)} onClick={this._deselectAll}>Deselect All</Button>
                     <Button bsStyle="info" className="navbar-btn" onClick={this._toggleExpanded}>Collapse/Expand</Button>*/}
-                    <Button bsStyle="info" className="navbar-btn" disabled={_.isEmpty(this.props.payments)} onClick={this._submitPayments}>Pay Selected</Button>
+                    <Button bsStyle="info" className="navbar-btn" disabled={this.props.payments.size < 1} onClick={this._submitPayments}>Pay Selected</Button>
                     {spinner}
                   </ButtonToolbar>
                 </nav>

@@ -19,12 +19,13 @@ const Customers = React.createClass({
     render() {
         console.log('CustomerS render');
         const custs = this.props.customers.map((c, index) => {
+            console.log('mapping customers:', index);
             return (
               <FluxComponent connectToStores={{
                 customers: store => ({
                   expanded: store.getExpanded(),
-                  invoices: store.getInvoices(this.props.customers[index] && this.props.customers[index].Id),
-                  selected: store.getIsSelected(this.props.customers[index] && this.props.customers[index].Id)
+                  invoices: store.getInvoices(this.props.customers.get(index) && this.props.customers.get(index).Id),
+                  selected: store.getIsSelected(this.props.customers.get(index) && this.props.customers.get(index).Id)
                 })
               }} key={index}>
                 <Customer
