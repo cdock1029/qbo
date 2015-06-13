@@ -1,6 +1,6 @@
 'use strict';
 
-const QBO = require('../src/utils/QBO');
+const QBO = require('server/utils/QBO');
 const chai = require('chai');
 const expect = chai.expect;
 

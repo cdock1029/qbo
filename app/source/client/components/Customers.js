@@ -1,8 +1,8 @@
 'use strict';
 
-import React from 'react/addons';
+import React from '../../../../node_modules/react/addons';
 import Customer from './Customer';
-import FluxComponent from 'flummox/component';
+import FluxComponent from '../../../../node_modules/flummox/component';
 import {Table, Row, Col} from 'react-bootstrap';
 import _ from 'underscore';
 
@@ -11,7 +11,7 @@ const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 const Customers = React.createClass({
 
     propTypes: {
-      customers: React.PropTypes.array,
+      customers: React.PropTypes.object,
       flux: React.PropTypes.object
     },
 

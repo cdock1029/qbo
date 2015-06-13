@@ -1,8 +1,8 @@
 'use strict';
 
-import React from 'react/addons';
+import React from '../../../../node_modules/react/addons';
 import classnames from 'classnames';
-import FluxComponent from 'flummox/component';
+import FluxComponent from '../../../../node_modules/flummox/component';
 import CustomersWrapper from './CustomersWrapper';
 import {ButtonToolbar, Button, Row, Col, Alert, Navbar} from 'react-bootstrap';
 import _ from 'underscore';

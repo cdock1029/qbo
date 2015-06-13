@@ -1,8 +1,8 @@
 'use strict';
 
-import React from 'react/addons';
+import React from '../../../../node_modules/react/addons';
 import App from './App';
-import FluxComponent from 'flummox/component';
+import FluxComponent from '../../../../node_modules/flummox/component';
 import AppFlux from '../flux/Flux';
 import { CustomerStore } from '../flux/Stores';
 

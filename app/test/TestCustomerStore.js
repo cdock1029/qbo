@@ -1,6 +1,6 @@
 'use strict';
 
-const AppFlux = require('../src/flux/Flux');
+const AppFlux = require('../source/client/flux/Flux');
 const chai = require('chai');
 const expect = chai.expect;
 

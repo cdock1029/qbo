@@ -1,8 +1,8 @@
 'use strict';
 
-require('babel/register');
+require('core-js');
 /*eslint-disable no-var */
-var server = require('./server.js');
+var server = require('server');
 /*eslint-enable no-var */
 
 server.start(function() {

@@ -2,12 +2,21 @@
 
 const Hapi = require('hapi');
 
-const routes = require('./routes');
-const plugins = require('./plugins');
-const views = require('./views');
-const connection = require('./connection');
+const routes = require('server/routes');
+const plugins = require('server/plugins');
+const views = require('server/views');
+const connection = require('server/connection');
+const Path = require('path');
 
-const server = new Hapi.Server();
+const server = new Hapi.Server({
+  connections: {
+    routes: {
+      files: {
+        relativeTo: Path.join(__dirname, '/../public')
+      }
+    }
+  }
+});
 
 server.connection(connection);
 server.register(plugins, (err) => {

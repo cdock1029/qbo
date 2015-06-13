@@ -1,6 +1,6 @@
 'use strict';
 
-import React from 'react/addons';
+import React from '../../../../node_modules/react/addons';
 import moment from 'moment';
 import {PanelGroup, Panel, ListGroup, ListGroupItem, Badge} from 'react-bootstrap';
 import _ from 'underscore';
@@ -11,7 +11,7 @@ const Invoices = React.createClass({
     //mixins: [React.addons.PureRenderMixin],
 
     render() {
-      const panels = _.map(this.props.invoices, function(invoice, index) {
+      const panels = this.props.invoices.map(function(invoice, index) {
 
         let lines = _(invoice.Line).where({DetailType: 'SalesItemLineDetail'});
 

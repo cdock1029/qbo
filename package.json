@@ -11,6 +11,7 @@
     "browserify": "latest",
     "chai": "latest",
     "classnames": "latest",
+    "core-js": "^0.9.16",
     "crumb": "latest",
     "eslint": "latest",
     "eslint-plugin-react": "latest",
@@ -32,6 +33,7 @@
     "object-assign": "latest",
     "parse": "latest",
     "parse-react": "latest",
+    "path": "^0.11.14",
     "q": "latest",
     "qs": "latest",
     "ramda": "latest",
@@ -44,15 +46,21 @@
     "yar": "latest"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel/register",
+    "test": "mocha --compilers js:babel/register app/test",
     "lint": "eslint ./",
-    "clean": "rm src/bundle.js || true",
+    "clean-server": "rm -r app/node_modules/server/* & rm -r app/node_modules/lib/* || true",
+    "clean-client": "rm app/node_modules/public/js/bundle.js || true",
+    "clean": "npm run clean-server & npm run clean-client || true",
     "prebuild": "npm run clean -s",
-    "build": "browserify src/components/main.js -o src/bundle.js",
-    "prestart": "npm run build && npm run test && npm run lint",
-    "watch": "watchify src/components/main.js -o src/bundle.js -dv",
-    "dev": "npm run watch & node app.js",
-    "start": "node app.js"
+    "build-server": "babel -d app/node_modules/server app/source/server -s && babel -d app/node_modules/lib app/source/lib -s",
+    "build-client": "browserify app/source/client/components/main.js -o app/node_modules/public/js/bundle.js",
+    "build": "npm run build-server & npm run build-client",
+    "prestartNO": "npm run build && npm run test && npm run lint",
+    "watch-client": "watchify app/source/client/components/main.js -o app/node_modules/public/js/bundle.js -dv",
+    "watch-server": "babel -d app/node_modules/server app/source/server -s -w & babel -d app/node_modules/lib app/source/lib -s -w",
+    "watch": "npm run watch-client & npm run watch-server",
+    "dev": "npm run watch & sleep 3.5 && nodemon --watch app/node_modules/server --watch app/node_modules/lib app/index.js",
+    "start": "node app/index.js"
   },
   "browserify": {
     "transform": [
