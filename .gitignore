@@ -3,7 +3,6 @@ server_build.js
 .c9
 npm-debug.log
 npm-debug.log.*
-lib
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
@@ -11,3 +10,4 @@ lib
 !.elasticbeanstalk/*.global.yml
 .settings
 server.output
+semantic/
