@@ -1,52 +1,61 @@
 'use strict';
 
-import React from '../../../../node_modules/react/addons';
+import React from 'react/addons';
+import connectToStores from 'flummox/connect';
 import accounting from 'accounting';
-import _ from 'underscore';
 import Invoices from './Invoices';
 import {Button} from 'react-bootstrap';
 
-module.exports = React.createClass({
-
-  propTypes: {
-    customer: React.PropTypes.object,
-    expanded: React.PropTypes.bool,
-    flux: React.PropTypes.object,
-    invoices: React.PropTypes.array,
-    selected: React.PropTypes.bool
-  },
-
-  //mixins: [React.addons.PureRenderMixin],
+class Customer extends React.Component {
 
   _handleChange(event) {
     console.log('_handleChange', arguments);
-    const update = this.props.flux.getActions('customers').updatePayments;
+    const update = this.context.flux.getActions('customers').updatePayments;
 
     if (this.props.selected) {
-      update(this.props.customer.Id, null);
+      update(this.props.customer.get('Id'), null);
     } else {
-      update(this.props.customer.Id, this.props.invoices);//this.state.invoices);
+      update(this.props.customer.get('Id'), this.props.invoices);//this.state.invoices);
     }
 
-  },
+  }
 
   render() {
     const customer = this.props.customer;
-    console.log('Customer render:', customer.Id);
+    console.log('Customer render:', customer.get('Id'));
     const cells = [
-      {content: customer.CompanyName},
-      {content: <p>{customer.DisplayName}</p>},
+      {content: customer.get('CompanyName')},
+      {content: <p>{customer.get('DisplayName')}</p>},
       {content: <Invoices expanded={this.props.expanded} invoices={this.props.invoices} />},
-      {content: <Button bsSize="large" bsStyle={this.props.selected ? 'success' : 'default'} onClick={this._handleChange}>{accounting.formatMoney(customer.Balance)}</Button>},
-      {content: <h5>{customer.Id}</h5>}
+      {content: <Button bsSize="large" bsStyle={this.props.selected ? 'success' : 'default'} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</Button>},
+      {content: <h5>{customer.get('Id')}</h5>}
     ];
     return (
       <tr>
-        {_.map(cells, (c, index) => {
+        {cells.map( (c, index) => {
           return <td key={index} onClick={c.onClick}>{c.content}</td>;
         })}
       </tr>
     );
   }
+}
+Customer.propTypes = {
+  customer: React.PropTypes.object,
+  expanded: React.PropTypes.bool,
+  invoices: React.PropTypes.object,
+  selected: React.PropTypes.bool
+};
 
+Customer.contextTypes = {
+  flux: React.PropTypes.object
+};
+
+Customer = connectToStores(Customer, {
+  customers: (store, props) => ({
+    expanded: store.getExpanded(),
+    invoices: store.getInvoices(props.customer.get('Id')),
+    selected: store.getIsSelected(props.customer.get('Id'))
+  })
 });
+
+export default Customer;

@@ -79,7 +79,7 @@ class CustomerStore extends Store {
 
   getInvoices(customerId) {
     console.log('getInvoices');
-    return this.state.invoices.get(customerId);
+    return this.state.invoices.get(customerId) || [];
   }
 
   setLoading() {
@@ -160,8 +160,8 @@ class CustomerStore extends Store {
     this.setState(state => ({
       totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : state.totalCount,
       loading: false,
-      customers: data.Customer,
-      invoices: data.Invoice,
+      customers: state.customers.merge(data.Customer),
+      invoices: state.invoices.merge(data.Invoice),
       next: next,
       previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults : 1)
     }));

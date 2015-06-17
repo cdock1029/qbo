@@ -1,6 +1,6 @@
 'use strict';
 
-import React from '../../../../node_modules/react/addons';
+import React from 'react/addons';
 import moment from 'moment';
 import {PanelGroup, Panel, ListGroup, ListGroupItem, Badge} from 'react-bootstrap';
 import _ from 'underscore';
@@ -8,21 +8,26 @@ import accounting from 'accounting';
 
 const Invoices = React.createClass({
 
+    propTypes: {
+      expanded: React.PropTypes.bool,
+      invoices: React.PropTypes.object
+    },
+
     //mixins: [React.addons.PureRenderMixin],
 
     render() {
       const panels = this.props.invoices.map(function(invoice, index) {
-
-        let lines = _(invoice.Line).where({DetailType: 'SalesItemLineDetail'});
-
+        let lines = invoice.get('Line').filter( entry => {
+          return entry.get('DetailType') === 'SalesItemLineDetail';
+        });
           let descriptionLabel;
-          let firstLineItem = lines[0];
-          if (!lines.length) {
+          let firstLineItem = lines.get(0);
+          if (!lines.size) {
               descriptionLabel = '(Unlabeled Charge)';
-          } else if (lines.length === 1) {
-              descriptionLabel = firstLineItem.SalesItemLineDetail.ItemRef.name;
+          } else if (lines.size === 1) {
+              descriptionLabel = firstLineItem.getIn(['SalesItemLineDetail', 'ItemRef', 'name']);
           } else {
-              descriptionLabel = invoice.PrivateNote || firstLineItem.SalesItemLineDetail.ItemRef.name;
+              descriptionLabel = invoice.get('PrivateNote') || firstLineItem.getIn(['SalesItemLineDetail', 'ItemRef', 'name']);
               descriptionLabel += '...';
           }
           let style = {
@@ -31,20 +36,18 @@ const Invoices = React.createClass({
           };
           let header = [
               <small className="pull-right" key="0">{descriptionLabel}</small>,
-              <span key="1">{moment(invoice.TxnDate).format('MMM Do, YYYY') + '  '}</span>,
-              <span className="label label-default" key="3" style={style}>{accounting.formatMoney(invoice.Balance)}</span>
+              <span key="1">{moment(invoice.get('TxnDate')).format('MMM Do, YYYY') + '  '}</span>,
+              <span className="label label-default" key="3" style={style}>{accounting.formatMoney(invoice.get('Balance'))}</span>
           ];
 
-          let listGroupItems = _(lines).map((line, i) => {
-            return <ListGroupItem key={i}><Badge>{accounting.formatMoney(line.Amount)}</Badge>{line.SalesItemLineDetail.ItemRef.name}</ListGroupItem>;
-          });
+          let listGroupItems = lines.map((line, i) => {
+            return <ListGroupItem key={i}><Badge>{accounting.formatMoney(line.get('Amount'))}</Badge>{line.getIn(['SalesItemLineDetail', 'ItemRef', 'name'])}</ListGroupItem>;
+          }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
-          let tax = invoice.TxnTaxDetail;
-          let taxLine = tax && tax.TotalTax && <ListGroupItem key={'tax'}><Badge>{accounting.formatMoney(tax.TotalTax)}</Badge>Tax</ListGroupItem>;
+          let taxLine = invoice.hasIn(['TxnTaxDetail', 'TotalTax']) && <ListGroupItem key={'tax'}><Badge>{accounting.formatMoney(invoice.getIn(['TxnTaxDetail', 'TotalTax']))}</Badge>Tax</ListGroupItem>;
           if (taxLine) {
             listGroupItems.push(taxLine);
           }
-
           return (
               <Panel collapsable={this.props.expanded} defaultExpanded={false} header={header} key={index}>
                   <ListGroup fill>
@@ -52,7 +55,7 @@ const Invoices = React.createClass({
                   </ListGroup>
               </Panel>
           );
-      }, this);
+      }, this).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
         return (
             this.props.invoices ?
                 <PanelGroup>

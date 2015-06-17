@@ -1,8 +1,8 @@
 'use strict';
 
-import React from '../../../../node_modules/react/addons';
+import React from 'react/addons';
 import classnames from 'classnames';
-import FluxComponent from '../../../../node_modules/flummox/component';
+import FluxComponent from 'flummox/component';
 import CustomersWrapper from './CustomersWrapper';
 import {ButtonToolbar, Button, Row, Col, Alert, Navbar} from 'react-bootstrap';
 import _ from 'underscore';
@@ -53,7 +53,7 @@ const App = React.createClass({
           return (<Alert bsStyle={alert.style} key={index} onDismiss={this._dismissAlert.bind(null, index)}>
             {alert.message}
           </Alert>);
-        });
+        }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
       let pages = null;
       const pageSize = this.props.pageSize;

@@ -1,10 +1,8 @@
 'use strict';
 
-import React from '../../../../node_modules/react/addons';
+import React from 'react/addons';
 import Customer from './Customer';
-import FluxComponent from '../../../../node_modules/flummox/component';
 import {Table, Row, Col} from 'react-bootstrap';
-import _ from 'underscore';
 
 const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
@@ -20,20 +18,8 @@ const Customers = React.createClass({
         console.log('CustomerS render');
         const custs = this.props.customers.map((c, index) => {
             console.log('mapping customers:', index);
-            return (
-              <FluxComponent connectToStores={{
-                customers: store => ({
-                  expanded: store.getExpanded(),
-                  invoices: store.getInvoices(this.props.customers.get(index) && this.props.customers.get(index).Id),
-                  selected: store.getIsSelected(this.props.customers.get(index) && this.props.customers.get(index).Id)
-                })
-              }} key={index}>
-                <Customer
-                  count={index + 1}
-                  customer={c} />
-              </FluxComponent>);
-
-        });
+            return <Customer customer={c} key={index} />;
+        }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
         return (
           <Col lg={10} lgOffset={1}>
@@ -41,7 +27,7 @@ const Customers = React.createClass({
                 <Table condensed responsive>
                   <thead>
                     <tr>
-                     {_.map(['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'], (h, i) => {
+                     {['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'].map((h, i) => {
                        return <th key={i}>{h}</th>;
                      })}
                     </tr>
