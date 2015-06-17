@@ -38,7 +38,7 @@ class CustomerStore extends Store {
   }
 
   getCustomers() {
-    console.log('getCustomers');
+    //console.log('getCustomers');
     return this.state.customers;
   }
 
@@ -148,7 +148,7 @@ class CustomerStore extends Store {
       window.crumb(result.crumb);
     }
     const data = result.QueryResponse;
-    console.log('handleCustomers', data);
+    //console.log('handleCustomers', data);
     let next = null;
     if (this.state.totalCount) {
       next = data.maxResults + data.startPosition - 1 === this.state.totalCount ? null : data.startPosition + data.maxResults;

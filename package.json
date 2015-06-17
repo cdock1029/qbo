@@ -47,7 +47,7 @@
   },
   "scripts": {
     "test": "mocha --compilers js:babel/register app/test",
-    "lint": "eslint ./",
+    "lint": "eslint .",
     "clean-server": "rm -r app/node_modules/server/* & rm -r app/node_modules/lib/* & rm npm-debug.log.* & rm server.output || true",
     "clean-client": "rm app/node_modules/public/js/* || true",
     "clean": "npm run clean-server & npm run clean-client || true",
@@ -78,6 +78,7 @@
   },
   "devDependencies": {
     "exorcist": "^0.4.0",
+    "gulp": "^3.9.0",
     "watchify": "latest"
   }
 }

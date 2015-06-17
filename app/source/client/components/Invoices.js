@@ -3,7 +3,6 @@
 import React from 'react/addons';
 import moment from 'moment';
 import {PanelGroup, Panel, ListGroup, ListGroupItem, Badge} from 'react-bootstrap';
-import _ from 'underscore';
 import accounting from 'accounting';
 
 const Invoices = React.createClass({

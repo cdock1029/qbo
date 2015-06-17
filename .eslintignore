@@ -1,3 +1,2 @@
 node_modules/**
-lib/**
-src/bundle.js
+app/node_modules/**
