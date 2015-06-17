@@ -41,10 +41,12 @@ module.exports = [{
   }
 }, {
   method: 'GET',
-  path: '/js/bundle.js',
+  path: '/js/{param*}',
   config: {
     handler: {
-      file: 'js/bundle.js'
+      directory: {
+        path: 'js'
+      }
     }
   }
 }, {
@@ -479,8 +481,9 @@ module.exports = [{
   method: 'GET',
   path: '/robots.txt',
   config: {
+    auth: false,
     handler: {
-      file: './robots.txt'
+      file: 'robots.txt'
     }
   }
 }];
