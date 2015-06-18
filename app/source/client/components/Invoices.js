@@ -2,7 +2,6 @@
 
 import React from 'react/addons';
 import moment from 'moment';
-import {PanelGroup, Panel, ListGroup, ListGroupItem, Badge} from 'react-bootstrap';
 import accounting from 'accounting';
 
 const Invoices = React.createClass({
@@ -12,10 +11,10 @@ const Invoices = React.createClass({
       invoices: React.PropTypes.object
     },
 
-    //mixins: [React.addons.PureRenderMixin],
+    mixins: [React.addons.PureRenderMixin],
 
     render() {
-      const panels = this.props.invoices.map(function(invoice, index) {
+      const feeds = this.props.invoices.map(function(invoice, index) {
         let lines = invoice.get('Line').filter( entry => {
           return entry.get('DetailType') === 'SalesItemLineDetail';
         });
@@ -40,27 +39,42 @@ const Invoices = React.createClass({
           ];
 
           let listGroupItems = lines.map((line, i) => {
-            return <ListGroupItem key={i}><Badge>{accounting.formatMoney(line.get('Amount'))}</Badge>{line.getIn(['SalesItemLineDetail', 'ItemRef', 'name'])}</ListGroupItem>;
+            return <div key={i}><div>{accounting.formatMoney(line.get('Amount'))}</div>{line.getIn(['SalesItemLineDetail', 'ItemRef', 'name'])}</div>;
           }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
-          let taxLine = invoice.hasIn(['TxnTaxDetail', 'TotalTax']) && <ListGroupItem key={'tax'}><Badge>{accounting.formatMoney(invoice.getIn(['TxnTaxDetail', 'TotalTax']))}</Badge>Tax</ListGroupItem>;
+          let taxLine = invoice.hasIn(['TxnTaxDetail', 'TotalTax']) && <div key={'tax'}><div>{accounting.formatMoney(invoice.getIn(['TxnTaxDetail', 'TotalTax']))}</div>Tax</div>;
           if (taxLine) {
             listGroupItems.push(taxLine);
           }
           return (
-              <Panel collapsable={this.props.expanded} defaultExpanded={false} header={header} key={index}>
-                  <ListGroup fill>
-                      {listGroupItems}
-                  </ListGroup>
-              </Panel>
+            <div className="ui small feed" key={index}>
+              <div className="event">
+                <div className="label">
+                  <i className="pencil icon"></i>
+                </div>
+                <div className="content">
+                  <div className="summary">
+                    {descriptionLabel}
+                    <div className="date">
+                      {moment(invoice.get('TxnDate')).format('MMM Do, YYYY')}
+                    </div>
+                  </div>
+                  <div className="meta">
+                    <a className="like">
+                      <i className="large money icon"></i> {accounting.formatMoney(invoice.get('Balance'))}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           );
       }, this).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
         return (
-            this.props.invoices ?
-                <PanelGroup>
-                    {panels}
-                </PanelGroup>
-            : null
+          this.props.invoices ?
+            <div>
+              {feeds}
+            </div>
+          : null
         );
     }
 });

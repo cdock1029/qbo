@@ -2,7 +2,6 @@
 
 import React from 'react/addons';
 import Customer from './Customer';
-import {Table, Row, Col} from 'react-bootstrap';
 
 const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
@@ -19,12 +18,15 @@ const Customers = React.createClass({
         const custs = this.props.customers.map((c, index) => {
             console.log('mapping customers:', index);
             return <Customer customer={c} key={index} />;
-        }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
-
+        });//TODO refactor when immutable object can be rendered correctly in Bootstrap
+        const loader = this.props.loading ?
+          (<div className="ui active inverted dimmer">
+            <div className="ui text loader">Loading</div>
+          </div>) : null;
         return (
-          <div className="column">
               <div className="row">
-                <Table condensed responsive>
+                {loader}
+                <table className="ui table">
                   <thead>
                     <tr>
                      {['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'].map((h, i) => {
@@ -35,9 +37,8 @@ const Customers = React.createClass({
                   <ReactCSSTransitionGroup component="tbody" transitionName="tenants">
                     {custs}
                   </ReactCSSTransitionGroup>
-                </Table>
+                </table>
               </div>
-          </div>
         );
     }
 });

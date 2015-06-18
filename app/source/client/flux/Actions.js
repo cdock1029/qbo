@@ -31,11 +31,8 @@ const CustomerActions = {
 
   removeAlert(index) {
     return index;
-  },
-
-  clearAllPayments() {
-    return true;
   }
+
 };
 
 let actions = {};

@@ -14,7 +14,6 @@ class CustomerStore extends Store {
     this.register(actions.toggleExpanded, this.toggleExpanded);
     this.registerAsync(actions.submitPayments, this.setLoading, this.handleSubmitPayments, this.handleJqueryError);
     this.register(actions.removeAlert, this.handleRemoveAlert);
-    this.register(actions.clearAllPayments, this.clearAllPayments);
 
     this.state = {
       customers: Immutable.List(),
@@ -22,19 +21,13 @@ class CustomerStore extends Store {
       payments: Immutable.Map(),
       expanded: true,
       loading: false,
-      alerts: Immutable.List()
+      alerts: Immutable.List.of({message: 'Data loaded Yes!', type: 'info'})
     };
 
   }
 
   static getPageSize() {
     return 2;
-  }
-
-  clearAllPayments() {
-    if (!$.isEmptyObject(this.state.payments)) {
-      this.setState({payments: {}});
-    }
   }
 
   getCustomers() {

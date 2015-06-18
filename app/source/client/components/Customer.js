@@ -4,7 +4,7 @@ import React from 'react/addons';
 import connectToStores from 'flummox/connect';
 import accounting from 'accounting';
 import Invoices from './Invoices';
-import {Button} from 'react-bootstrap';
+import cx from 'classnames';
 
 class Customer extends React.Component {
 
@@ -27,7 +27,7 @@ class Customer extends React.Component {
       {content: customer.get('CompanyName')},
       {content: <p>{customer.get('DisplayName')}</p>},
       {content: <Invoices expanded={this.props.expanded} invoices={this.props.invoices} />},
-      {content: <Button bsSize="large" bsStyle={this.props.selected ? 'success' : 'default'} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</Button>},
+      {content: <button className={cx('large', 'ui', 'button', this.props.selected ? 'green' : 'basic')} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</button>},
       {content: <h5>{customer.get('Id')}</h5>}
     ];
     return (

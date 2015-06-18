@@ -4,9 +4,7 @@ import React from 'react/addons';
 import classnames from 'classnames';
 import FluxComponent from 'flummox/component';
 import CustomersWrapper from './CustomersWrapper';
-import {ButtonToolbar, Button, Row, Col, Alert, Navbar} from 'react-bootstrap';
 import _ from 'underscore';
-import Spinner from 'react-spinkit';
 const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 const App = React.createClass({
@@ -26,10 +24,6 @@ const App = React.createClass({
       this.props.flux.getActions('customers').removeAlert(index);
     },
 
-    _toggleExpanded() {
-      this.props.flux.getActions('customers').toggleExpanded();
-    },
-
     _navigate(offset) {
       console.log('_navigate', offset);
       this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false});
@@ -37,9 +31,14 @@ const App = React.createClass({
 
     render() {
         const alerts = this.props.alerts.map((alert, index) => {
-          return (<Alert bsStyle={alert.style} key={index} onDismiss={this._dismissAlert.bind(null, index)}>
-            {alert.message}
-          </Alert>);
+          return (
+            <div className={classnames({ui: true, message: true}, alert.type)} key={index} onDismiss={this._dismissAlert.bind(null, index)}>
+              <i className="close icon"></i>
+              <div className="header">
+                {alert.message}
+              </div>
+            </div>
+          );
         }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
       let pages = null;
@@ -96,15 +95,8 @@ const App = React.createClass({
           </div>
         );
       }
-      const loader = this.props.loading ? (
-        <div className="ui active dimmer">
-          <div className="ui large text loader">Loading</div>
-        </div>
-      ) : null;
         return (
-          <div className="ui centered grid">
-            {loader}
-
+          <div className="ui page grid main centered">
             <div className="row">
               <div className="column">
                 <ReactCSSTransitionGroup transitionName="alerts">
@@ -113,9 +105,11 @@ const App = React.createClass({
               </div>
             </div>
             <div className="row">
-              <FluxComponent>
-                <CustomersWrapper />
-              </FluxComponent>
+              <div className="column">
+                <FluxComponent>
+                  <CustomersWrapper />
+                </FluxComponent>
+              </div>
             </div>
 
             <div className="ui bottom fixed menu centered">
