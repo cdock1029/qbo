@@ -28,7 +28,7 @@ class CustomerStore extends Store {
   }
 
   static getPageSize() {
-    return 100;
+    return 2;
   }
 
   clearAllPayments() {

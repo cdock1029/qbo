@@ -41,6 +41,16 @@ module.exports = [{
   }
 }, {
   method: 'GET',
+  path: '/semantic/{param*}',
+  config: {
+    handler: {
+      directory: {
+        path: 'semantic'
+      }
+    }
+  }
+}, {
+  method: 'GET',
   path: '/js/{param*}',
   config: {
     handler: {
@@ -55,7 +65,7 @@ module.exports = [{
   config: {
     handler: (request, reply) => {
       let companies = request.auth.credentials.companies;
-      let companySelectForm = React.renderToString(new CompanyDropdownButton({
+      let companySelectForm = React.renderToStaticMarkup(new CompanyDropdownButton({
         companies: companies
       }));
       let ctx = {

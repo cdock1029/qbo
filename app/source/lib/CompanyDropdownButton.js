@@ -1,7 +1,7 @@
 'use strict';
 
 import React from 'react/addons';
-import {DropdownButton, MenuItem, Navbar, Nav, NavItem} from 'react-bootstrap';
+import PayButton from './PayButton';
 import _ from 'underscore';
 
 
@@ -19,17 +19,25 @@ const CompanyDropdownButton = React.createClass({
           if (company.isSelected) {
               selectedLabel = company.name + ' ';
           }
-          return <MenuItem className="companyItems" eventKey={index} key={index}>{company.name}</MenuItem>;
+          return <div className="item companyItems" key={index}>{company.name}</div>;
       });
       return (
-        <Navbar brand="Waldon Management" fixedTop inverse toggleNavKey={0}>
-          <Nav collapsable defaultNavExpanded={true} eventKey={0} right>
-            <DropdownButton data-toggle="dropdown" eventKey={1} title={selectedLabel}>
-              {menuItems}
-            </DropdownButton>
-            <NavItem eventKey={2} href="/logout"><span className="glyphicon glyphicon-log-out"></span> Logout</NavItem>
-          </Nav>
-        </Navbar>
+          <div className="ui menu fixed grid">
+            <a className="ui header teal item">Waldon Management</a>
+            <div className="right menu">
+              <div className="item" id="payButtonContainer">
+                <PayButton />
+              </div>
+              <a className="ui dropdown item">
+                <div className="text">{selectedLabel}</div>
+                <i className="dropdown icon"></i>
+                <div className="menu">
+                  {menuItems}
+                </div>
+              </a>
+              <a className="item" href="/logout">Logout <i className="sign out icon"></i></a>
+            </div>
+          </div>
       );
     }
 });

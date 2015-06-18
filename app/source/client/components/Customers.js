@@ -22,8 +22,8 @@ const Customers = React.createClass({
         }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
         return (
-          <Col lg={10} lgOffset={1}>
-              <Row>
+          <div className="column">
+              <div className="row">
                 <Table condensed responsive>
                   <thead>
                     <tr>
@@ -36,8 +36,8 @@ const Customers = React.createClass({
                     {custs}
                   </ReactCSSTransitionGroup>
                 </Table>
-              </Row>
-          </Col>
+              </div>
+          </div>
         );
     }
 });

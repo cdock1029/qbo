@@ -17,17 +17,8 @@ const App = React.createClass({
       loading: React.PropTypes.bool,
       next: React.PropTypes.string,
       pageSize: React.PropTypes.number,
-      payments: React.PropTypes.object,
       previous: React.PropTypes.string,
       totalCount: React.PropTypes.number
-    },
-
-    _submitPayments() {
-      //const payments = this.props.flux.getStore('customers').getPayments();
-
-      if (!_.isEmpty(this.props.payments)) {
-        this.props.flux.getActions('customers').submitPayments(this.props.payments);
-      }
     },
 
     _dismissAlert(index) {
@@ -42,10 +33,6 @@ const App = React.createClass({
     _navigate(offset) {
       console.log('_navigate', offset);
       this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false});
-    },
-
-    _deselectAll() {
-      this.props.flux.getActions('customers').clearAllPayments();
     },
 
     render() {
@@ -63,75 +50,77 @@ const App = React.createClass({
 
           let offset = i * pageSize + 1;
           let classes;
+          let el, test;
           if (this.props.previous && this.props.next) {
+            test = this.props.previous < offset && offset < this.props.next;
+            el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
-              active: (this.props.previous < offset && offset < this.props.next),
-              disabled: this.props.loading
+              active: test,
+              disabled: this.props.loading || test,
+              item: true
             });
           } else if (this.props.previous) {
+            test = i === (numPages - 1);
+            el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
-              active: i === (numPages - 1)
+              active: test,
+              disabled: test,
+              item: true
             });
           } else {
+            test = i === 0;
+            el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
-              active: i === 0
+              active: test,
+              disabled: test,
+              item: true
             });
           }
-
-          return <li className={classes} key={i}><a href={'#' + offset} onClick={this._navigate.bind(null, offset)}>{i + 1}</a></li>;
+          return el({className: classes, key: i, onClick: test ? null : this._navigate.bind(null, offset)}, i + 1);
         }, this);
-        console.log('PageElements: ', pageElements);
-        const nextClass = classnames({ disabled: !this.props.next || this.props.loading });
-        const prevClass = classnames({ disabled: !this.props.previous || this.props.loading });
+
+        let nextTest = !this.props.next || this.props.loading, prevTest = !this.props.previous || this.props.loading;
+        let nextEl = nextTest ? React.DOM.div : React.DOM.a, prevEl = prevTest ? React.DOM.div : React.DOM.a;
+
+        const nextClass = classnames({ disabled: nextTest, icon: true, item: true });
+        const prevClass = classnames({ disabled: prevTest, icon: true, item: true });
         pageElements.unshift(
-          <li className={prevClass} key={'prev'}><a href={'#' + this.props.previous} onClick={this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}>&larr; Previous</a></li>
+          prevEl({className: prevClass, key: 'prev', onClick: this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}, <i className="left arrow icon"></i>)
         );
         pageElements.push(
-          <li className={nextClass} key={'next'}><a href={'#' + this.props.next} onClick={this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}>Next &rarr;</a></li>
+          nextEl({className: nextClass, key: 'next', onClick: this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}, <i className="right arrow icon"></i>)
         );
         pages = (
-          <nav className="text-center">
-            <ul className="pagination">
-              {pageElements}
-            </ul>
-          </nav>);
+          <div className="ui pagination menu">
+            {pageElements}
+          </div>
+        );
       }
-      const spinner = (
-        <Button className="navbar-btn" disabled style={{display: this.props.loading ? 'inline-block' : 'none'}}>
-          <Spinner noFadeIn spinnerName='three-bounce'/>
-        </Button>);
+      const loader = this.props.loading ? (
+        <div className="ui active dimmer">
+          <div className="ui large text loader">Loading</div>
+        </div>
+      ) : null;
         return (
-          <div>
-            <Navbar className="subNavbar" fixedTop>
-              <div className="container-fluid">
-                <nav className="text-center">
-                  <ButtonToolbar>
-                    {/*<Button bsStyle="primary" className="navbar-btn" disabled={_.isEmpty(this.props.payments)} onClick={this._deselectAll}>Deselect All</Button>
-                    <Button bsStyle="info" className="navbar-btn" onClick={this._toggleExpanded}>Collapse/Expand</Button>*/}
-                    <Button bsStyle="info" className="navbar-btn" disabled={this.props.payments.size < 1} onClick={this._submitPayments}>Pay Selected</Button>
-                    {spinner}
-                  </ButtonToolbar>
-                </nav>
-              </div>
-            </Navbar>
-            <Row>
-              <Col md={8} mdOffset={2}>
+          <div className="ui centered grid">
+            {loader}
+
+            <div className="row">
+              <div className="column">
                 <ReactCSSTransitionGroup transitionName="alerts">
                   {alerts}
                 </ReactCSSTransitionGroup>
-              </Col>
-            </Row>
-            <Row>
+              </div>
+            </div>
+            <div className="row">
               <FluxComponent>
                 <CustomersWrapper />
               </FluxComponent>
-            </Row>
+            </div>
 
-            <Navbar fixedBottom inverse>
-              <div className="container-fluid">
-                {pages}
-              </div>
-            </Navbar>
+            <div className="ui bottom fixed menu centered">
+              {pages}
+            </div>
           </div>
         );
     }

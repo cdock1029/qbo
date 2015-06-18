@@ -59,7 +59,7 @@
     "watch-client": "watchify app/source/client/components/main.js -o 'exorcist app/node_modules/public/js/bundle.js.map -u /js/bundle.js.map > app/node_modules/public/js/bundle.js' -dv",
     "watch-server": "babel -d app/node_modules/server app/source/server -s -w & babel -d app/node_modules/lib app/source/lib -s -w",
     "watch": "npm run watch-client & npm run watch-server",
-    "dev": "npm run watch & sleep 7.0 && nodemon --delay 1.900ms --watch app/node_modules/server --watch app/node_modules/lib --watch app/index.js > server.output",
+    "dev": "npm run watch & sleep 7.0 && (nodemon --delay 1.900ms --watch app/node_modules/server --watch app/node_modules/lib --watch app/index.js > server.output)",
     "start": "node app/index.js"
   },
   "browserify": {
