@@ -11,10 +11,14 @@ const Invoices = React.createClass({
       invoices: React.PropTypes.object
     },
 
-    mixins: [React.addons.PureRenderMixin],
+    shouldComponentUpdate(nextProps, nextState) {
+      return nextProps.invoices !== this.props.invoices ||
+          nextProps.expanded !== this.props.expanded;
+    },
 
     render() {
-      const feeds = this.props.invoices.map(function(invoice, index) {
+      console.log('..inv render');
+      const feeds = this.props.invoices && this.props.invoices.map(function(invoice, index) {
         let lines = invoice.get('Line').filter( entry => {
           return entry.get('DetailType') === 'SalesItemLineDetail';
         });

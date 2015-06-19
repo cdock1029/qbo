@@ -9,14 +9,18 @@ const Customers = React.createClass({
 
     propTypes: {
       customers: React.PropTypes.object,
-      flux: React.PropTypes.object
+      flux: React.PropTypes.object,
+      loading: React.PropTypes.bool
     },
 
+    shouldComponentUpdate(nextProps, nextState) {
+      return nextProps.customers !== this.props.customers ||
+        nextProps.loading !== this.props.loading;
+    },
 
     render() {
-        console.log('CustomerS render');
+        console.log('CustomerS RENDER');
         const custs = this.props.customers.map((c, index) => {
-            console.log('mapping customers:', index);
             return <Customer customer={c} key={index} />;
         });//TODO refactor when immutable object can be rendered correctly in Bootstrap
         const loader = this.props.loading ?
@@ -34,9 +38,11 @@ const Customers = React.createClass({
                      })}
                     </tr>
                   </thead>
-                  <ReactCSSTransitionGroup component="tbody" transitionName="tenants">
+                  {/*<ReactCSSTransitionGroup component="tbody" transitionName="tenants">*/}
+                  <tbody>
                     {custs}
-                  </ReactCSSTransitionGroup>
+                  </tbody>
+                  {/*</ReactCSSTransitionGroup>*/}
                 </table>
               </div>
         );

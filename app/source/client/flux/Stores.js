@@ -27,7 +27,7 @@ class CustomerStore extends Store {
   }
 
   static getPageSize() {
-    return 2;
+    return 6;
   }
 
   getCustomers() {
@@ -36,104 +36,98 @@ class CustomerStore extends Store {
   }
 
   getNext() {
-    console.log('getNext');
+    //console.log('getNext');
     return this.state.next;
   }
 
   getPrevious() {
-    console.log('getPrevious');
+    //console.log('getPrevious');
     return this.state.previous;
   }
 
   getTotalCount() {
-    console.log('getTotalCount');
+    //console.log('getTotalCount');
     return this.state.totalCount;
   }
 
   getLoading() {
-    console.log('getLoading');
+    //console.log('getLoading');
     return this.state.loading;
   }
 
   getPayments() {
-    console.log('getPayments');
+    //console.log('getPayments');
     return this.state.payments;
   }
 
   getExpanded() {
-    console.log('getExpanded');
+    //console.log('getExpanded');
     return this.state.expanded;
   }
 
   getIsSelected(customerId) {
-    console.log('getIsSelected');
+    //console.log('getIsSelected');
     return this.state.payments.has(customerId);
   }
 
   getInvoices(customerId) {
-    console.log('getInvoices');
-    return this.state.invoices.get(customerId) || [];
+    //console.log('getInvoices');
+    return this.state.invoices.get(customerId);
   }
 
   setLoading() {
-    console.log('setLoading');
+    //console.log('setLoading');
     this.setState(state => ({
       loading: true
     }));
   }
 
   toggleExpanded() {
-    console.log('toggleExpanded');
+    //console.log('toggleExpanded');
     this.setState(state => ({
       expanded: !state.expanded
     }));
   }
 
   updatePayments({customerId, invoices}) {
-    console.log('updatePayments');
+    //console.log('updatePayments');
     let payments = this.state.payments;
 
-    /*if (invoices){
-        payments.set(customerId, {customerId, invoices});
-    } else {
-        payments.delete(customerId);
-    }*/
     this.setState(state => ({
-      payments: invoices ? payments.set(customerId, {customerId, invoices}) : payments.delete(customerId)
+      payments: invoices ? payments.set(customerId, Immutable.Map({customerId, invoices})) : payments.delete(customerId)
     }));
   }
 
   handleJqueryError(error) {
-    console.log('handleJqueryError: ' + error);
+    //console.log('handleJqueryError: ' + error);
     //this.FLUX.getActions('alerts').addAlert(error);
     this.setState(state => ({
-      alerts: state.alerts.merge({message: error, style: 'danger'})
+      alerts: state.alerts.unshift({message: error, style: 'danger'})
     }));
   }
 
   getAlerts() {
-    console.log('store getAlerts()');
+    //console.log('store getAlerts()');
     return this.state.alerts;
   }
 
   addAlert(alert) {
-    console.log('addAlert');
+    //console.log('addAlert');
     this.setState(state => ({
-      alerts: state.alerts.merge(alert)
+      alerts: state.alerts.unshift(alert)
     }));
   }
 
   handleSubmitPayments(batchItemResponse) {
-    console.log('handleSubmitPayments');
+    //console.log('handleSubmitPayments');
     this.setState(state => ({
-      alerts: state.alerts.merge({
-        type: 'success',
+      alerts: state.alerts.unshift({
+        type: 'positive',
         message: 'Payments applied'
       }),
       loading: false,
       payments: state.payments.clear()
     }));
-    //this._getCustomerData(1, true);
   }
 
   handleCustomers(result) {
@@ -153,10 +147,10 @@ class CustomerStore extends Store {
     this.setState(state => ({
       totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : state.totalCount,
       loading: false,
-      customers: state.customers.merge(data.Customer),
-      invoices: state.invoices.merge(data.Invoice),
+      customers: Immutable.fromJS(data.Customer),
+      invoices: Immutable.fromJS(data.Invoice),
       next: next,
-      previous: data.startPosition === 1 ? null : ( data.startPosition - data.maxResults >= 1 ? data.startPosition - data.maxResults : 1)
+      previous: data.startPosition === 1 ? null : ( data.startPosition - CustomerStore.getPageSize() >= 1 ? data.startPosition - CustomerStore.getPageSize() : 1)
     }));
   }
 

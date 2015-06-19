@@ -19,7 +19,7 @@ const App = React.createClass({
       totalCount: React.PropTypes.number
     },
 
-    _dismissAlert(index) {
+    _dismissAlert(index, e) {
       console.log('_dismissAlert: ' + index);
       this.props.flux.getActions('customers').removeAlert(index);
     },
@@ -32,8 +32,8 @@ const App = React.createClass({
     render() {
         const alerts = this.props.alerts.map((alert, index) => {
           return (
-            <div className={classnames({ui: true, message: true}, alert.type)} key={index} onDismiss={this._dismissAlert.bind(null, index)}>
-              <i className="close icon"></i>
+            <div className={classnames({ui: true, message: true}, alert.type)} key={index}>
+              <i className="close icon" onClick={this._dismissAlert.bind(null, index)}></i>
               <div className="header">
                 {alert.message}
               </div>
@@ -55,7 +55,7 @@ const App = React.createClass({
             el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
               active: test,
-              disabled: this.props.loading || test,
+              disabled: this.props.loading,
               item: true
             });
           } else if (this.props.previous) {
@@ -63,7 +63,7 @@ const App = React.createClass({
             el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
               active: test,
-              disabled: test,
+              disabled: this.props.loading,
               item: true
             });
           } else {
@@ -71,23 +71,25 @@ const App = React.createClass({
             el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
               active: test,
-              disabled: test,
+              disabled: this.props.loading,
               item: true
             });
           }
-          return el({className: classes, key: i, onClick: test ? null : this._navigate.bind(null, offset)}, i + 1);
+          return el({className: classes, href:offset, key: i, onClick: test ? null : this._navigate.bind(null, offset)}, i + 1);
         }, this);
 
-        let nextTest = !this.props.next || this.props.loading, prevTest = !this.props.previous || this.props.loading;
-        let nextEl = nextTest ? React.DOM.div : React.DOM.a, prevEl = prevTest ? React.DOM.div : React.DOM.a;
+        const nextTest = !this.props.next || this.props.loading;
+        const prevTest = !this.props.previous || this.props.loading;
+        const nextEl = nextTest ? React.DOM.div : React.DOM.a;
+        const prevEl = prevTest ? React.DOM.div : React.DOM.a;
 
         const nextClass = classnames({ disabled: nextTest, icon: true, item: true });
         const prevClass = classnames({ disabled: prevTest, icon: true, item: true });
         pageElements.unshift(
-          prevEl({className: prevClass, key: 'prev', onClick: this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}, <i className="left arrow icon"></i>)
+          prevEl({className: prevClass, href: this.props.previous && '#' + this.props.previous, key: 'prev', onClick: this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}, <i className="left arrow icon"></i>)
         );
         pageElements.push(
-          nextEl({className: nextClass, key: 'next', onClick: this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}, <i className="right arrow icon"></i>)
+          nextEl({className: nextClass, href: this.props.next && '#' + this.props.next, key: 'next', onClick: this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}, <i className="right arrow icon"></i>)
         );
         pages = (
           <div className="ui pagination menu">

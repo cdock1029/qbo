@@ -9,7 +9,6 @@ import cx from 'classnames';
 class Customer extends React.Component {
 
   _handleChange(event) {
-    console.log('_handleChange', arguments);
     const update = this.context.flux.getActions('customers').updatePayments;
 
     if (this.props.selected) {
@@ -18,6 +17,13 @@ class Customer extends React.Component {
       update(this.props.customer.get('Id'), this.props.invoices);//this.state.invoices);
     }
 
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return nextProps.customer !== this.props.customer ||
+      nextProps.expanded !== this.props.expanded ||
+      nextProps.invoices !== this.props.invoices ||
+      nextProps.selected !== this.props.selected;
   }
 
   render() {
@@ -39,6 +45,7 @@ class Customer extends React.Component {
     );
   }
 }
+
 Customer.propTypes = {
   customer: React.PropTypes.object,
   expanded: React.PropTypes.bool,

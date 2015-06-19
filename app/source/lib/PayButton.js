@@ -13,7 +13,7 @@ module.exports = React.createClass({
   _submitPayments() {
 
     if (this.props.payments && !this.props.payments.isEmpty()) {
-      this.props.flux.getActions('customers').submitPayments(this.props.payments.toJS());
+      this.props.flux.getActions('customers').submitPayments(this.props.payments.toSet().toJS());
     }
   },
 

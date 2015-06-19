@@ -17,7 +17,7 @@ const CustomerActions = {
   },
 
   async submitPayments(payments) {
-    console.log('actions submitPayments');
+    console.log('actions submitPayments:', payments);
     try {
       return await submitPaymentsPromise(payments);
     } catch (err) {

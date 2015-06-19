@@ -28,6 +28,7 @@ let db = new Parse({
 let React = require('react');
 let CompanyDropdownButton = React.createFactory(require('lib/CompanyDropdownButton'));
 let _ = require('underscore');
+let R = require('ramda');
 let Q = require('q');
 let Qs = require('qs');
 
@@ -169,7 +170,7 @@ module.exports = [{
 
       let data = request.payload.payments;
 
-      let items = _.map(data, function(value, key) {
+      let items = data.map(function(value, index) {
         if (value) {
           let customerId = value.customerId;
           let invoices = value.invoices;
