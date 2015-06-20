@@ -28,7 +28,6 @@ let db = new Parse({
 let React = require('react');
 let CompanyDropdownButton = React.createFactory(require('lib/CompanyDropdownButton'));
 let _ = require('underscore');
-let R = require('ramda');
 let Q = require('q');
 let Qs = require('qs');
 

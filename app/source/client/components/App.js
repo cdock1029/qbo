@@ -75,7 +75,7 @@ const App = React.createClass({
               item: true
             });
           }
-          return el({className: classes, href:offset, key: i, onClick: test ? null : this._navigate.bind(null, offset)}, i + 1);
+          return el({className: classes, key: i, onClick: test ? null : this._navigate.bind(null, offset)}, i + 1);
         }, this);
 
         const nextTest = !this.props.next || this.props.loading;
@@ -86,10 +86,10 @@ const App = React.createClass({
         const nextClass = classnames({ disabled: nextTest, icon: true, item: true });
         const prevClass = classnames({ disabled: prevTest, icon: true, item: true });
         pageElements.unshift(
-          prevEl({className: prevClass, href: this.props.previous && '#' + this.props.previous, key: 'prev', onClick: this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}, <i className="left arrow icon"></i>)
+          prevEl({className: prevClass, key: 'prev', onClick: this.props.previous && !this.props.loading ? this._navigate.bind(null, this.props.previous) : null}, <i className="left arrow icon"></i>)
         );
         pageElements.push(
-          nextEl({className: nextClass, href: this.props.next && '#' + this.props.next, key: 'next', onClick: this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}, <i className="right arrow icon"></i>)
+          nextEl({className: nextClass, key: 'next', onClick: this.props.next && !this.props.loading ? this._navigate.bind(null, this.props.next) : null}, <i className="right arrow icon"></i>)
         );
         pages = (
           <div className="ui pagination menu">

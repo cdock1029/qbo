@@ -130,7 +130,7 @@ describe('QBO', function() {
   });
 
   describe('.extractPaymentsMap(paymentsArray)', function() {
-    it('takes a list of batch payment reponses, and returns a map of customer id to txnId list', function() {
+    it('takes a list of batch payment responses, and returns a map of customer id to txnId list', function() {
       const payments = [ { Payment:
         { CustomerRef: { value: '3', name: 'Cool Cars' },
           DepositToAccountRef: { value: '4' },

@@ -8,6 +8,13 @@ import cx from 'classnames';
 
 class Customer extends React.Component {
 
+  shouldComponentUpdate(nextProps, nextState) {
+    return nextProps.customer !== this.props.customer ||
+      nextProps.expanded !== this.props.expanded ||
+      nextProps.invoices !== this.props.invoices ||
+      nextProps.selected !== this.props.selected;
+  }
+
   _handleChange(event) {
     const update = this.context.flux.getActions('customers').updatePayments;
 
@@ -17,13 +24,6 @@ class Customer extends React.Component {
       update(this.props.customer.get('Id'), this.props.invoices);//this.state.invoices);
     }
 
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return nextProps.customer !== this.props.customer ||
-      nextProps.expanded !== this.props.expanded ||
-      nextProps.invoices !== this.props.invoices ||
-      nextProps.selected !== this.props.selected;
   }
 
   render() {

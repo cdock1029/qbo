@@ -32,7 +32,7 @@ const Invoices = React.createClass({
               descriptionLabel = invoice.get('PrivateNote') || firstLineItem.getIn(['SalesItemLineDetail', 'ItemRef', 'name']);
               descriptionLabel += '...';
           }
-          let style = {
+          /*let style = {
               display: 'inline-block',
               marginRight: '2px'
           };
@@ -40,7 +40,7 @@ const Invoices = React.createClass({
               <small className="pull-right" key="0">{descriptionLabel}</small>,
               <span key="1">{moment(invoice.get('TxnDate')).format('MMM Do, YYYY') + '  '}</span>,
               <span className="label label-default" key="3" style={style}>{accounting.formatMoney(invoice.get('Balance'))}</span>
-          ];
+          ];*/
 
           let listGroupItems = lines.map((line, i) => {
             return <div key={i}><div>{accounting.formatMoney(line.get('Amount'))}</div>{line.getIn(['SalesItemLineDetail', 'ItemRef', 'name'])}</div>;

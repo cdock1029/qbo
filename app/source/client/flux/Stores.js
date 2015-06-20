@@ -2,6 +2,7 @@
 
 import { Store } from 'flummox';
 import Immutable from 'immutable';
+import {removeSubmitted} from '../utils/dataTransforms';
 
 class CustomerStore extends Store {
 
@@ -119,15 +120,20 @@ class CustomerStore extends Store {
   }
 
   handleSubmitPayments(batchItemResponse) {
-    //console.log('handleSubmitPayments');
-    this.setState(state => ({
-      alerts: state.alerts.unshift({
-        type: 'positive',
-        message: 'Payments applied'
-      }),
-      loading: false,
-      payments: state.payments.clear()
-    }));
+
+    this.setState(state => {
+      const newState = removeSubmitted(state.customers.toJS(), state.invoices.toJS(), batchItemResponse);
+      return {
+        alerts: state.alerts.unshift({
+          type: 'positive',
+          message: 'Payments applied'
+        }),
+        customers: Immutable.fromJS(newState.customers),
+        invoices: Immutable.fromJS(newState.invoices),
+        loading: false,
+        payments: state.payments.clear()
+      };
+    });
   }
 
   handleCustomers(result) {

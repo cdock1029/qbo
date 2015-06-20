@@ -3,8 +3,6 @@
 import React from 'react/addons';
 import Customer from './Customer';
 
-const ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
-
 const Customers = React.createClass({
 
     propTypes: {

@@ -126,7 +126,7 @@ QBO.getCount = function getCount(fn, qbo, countParam, queryParams) {
   return deferred.promise;
 
 };
-const getCustomerRef = compose(map(prop('value')), map(prop('CustomerRef')));
+const getCustomerRef = map(compose(prop('value'), prop('CustomerRef')));
 const getTxnIds = compose(pluck('TxnId'), flatten, pluck('LinkedTxn'), flatten, map(prop('Line')));
 
 QBO.extractPaymentsMap = compose(converge(function(customers, ids) {
