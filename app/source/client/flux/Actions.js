@@ -4,12 +4,17 @@ import { getCustomersPromise, submitPaymentsPromise } from './Data';
 
 const CustomerActions = {
 
-  async getCustomers(query) {
+  async getCustomers(query, pageNumber = 0) {
     try {
-      return await getCustomersPromise(query);
+      const result = await getCustomersPromise(query);
+      return {result, pageNumber};
     } catch (err) {
       throw err.responseText;
     }
+  },
+
+  changeCachedPage(pageNumber) {
+    return pageNumber;
   },
 
   updatePayments(customerId, invoices) {

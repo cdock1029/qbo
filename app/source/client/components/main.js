@@ -30,7 +30,7 @@ React.render(
       previous: store.getPrevious(),
       next: store.getNext(),
       pageCount: store.getPageCount(),
-      totalCount: store.getTotalCount()
+      currentPage: store.getCurrentPage()
     })
   }} flux={flux}>
     <App pageSize={CustomerStore.getPageSize()} />

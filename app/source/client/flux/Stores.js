@@ -15,8 +15,10 @@ class CustomerStore extends Store {
     this.register(actions.toggleExpanded, this.toggleExpanded);
     this.registerAsync(actions.submitPayments, this.setLoading, this.handleSubmitPayments, this.handleJqueryError);
     this.register(actions.removeAlert, this.handleRemoveAlert);
+    this.register(actions.changeCachedPage, this.changeCachedPage);
 
     this.state = {
+      currentPage: 0,
       customers: Immutable.List(),
       invoices: Immutable.Map(),
       payments: Immutable.Map(),
@@ -27,8 +29,36 @@ class CustomerStore extends Store {
 
   }
 
+  /**
+   * @returns {number} the fixed size of each page of data.
+   */
   static getPageSize() {
-    return 6;
+    return 5;
+  }
+
+  /**
+   * Check if a page number is loaded in the store.
+   * @param pageNumber {number} desired page number to load.
+   * @returns {boolean} if the store had this page loaded.
+   */
+  isPageLoaded(pageNumber) {
+    return pageNumber < this.state.customers.size / CustomerStore.getPageSize();
+  }
+
+  changeCachedPage(pageNumber) {
+    //set prev, next accordingly
+    this.setState({
+      currentPage: pageNumber,
+      previous: pageNumber !== 0 ? pageNumber - 1 : null,
+      next: pageNumber !== this.state.pageCount - 1 ? pageNumber + 1 : null
+    });
+  }
+
+  /**
+   * @returns {number} the current page of data to be shown in the table.
+   */
+  getCurrentPage() {
+    return this.state.currentPage;
   }
 
   getPageCount() {
@@ -37,7 +67,10 @@ class CustomerStore extends Store {
 
   getCustomers() {
     //console.log('getCustomers');
-    return this.state.customers;
+    const start = this.state.currentPage * CustomerStore.getPageSize();
+    const end = start + CustomerStore.getPageSize();
+
+    return this.state.customers.slice(start, end);
   }
 
   getNext() {
@@ -48,11 +81,6 @@ class CustomerStore extends Store {
   getPrevious() {
     //console.log('getPrevious');
     return this.state.previous;
-  }
-
-  getTotalCount() {
-    //console.log('getTotalCount');
-    return this.state.totalCount;
   }
 
   getLoading() {
@@ -140,29 +168,23 @@ class CustomerStore extends Store {
     });
   }
 
-  handleCustomers(result) {
+  handleCustomers({result, pageNumber}) {
     if (result.crumb) {
       window.crumb(result.crumb);
     }
     const data = result.QueryResponse;
-    //console.log('handleCustomers', data);
-    let next = null;
-    if (this.state.totalCount) {
-      next = data.maxResults + data.startPosition - 1 === this.state.totalCount ? null : data.startPosition + data.maxResults;
-    } else if (data.totalCount) {
-      next = data.maxResults + data.startPosition - 1 === data.totalCount ? null : data.startPosition + data.maxResults;
-    } else {
-      next = data.maxResults === CustomerStore.getPageSize() ? data.startPosition + data.maxResults : null;
-    }
-    this.setState(state => ({
-      totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : state.totalCount,
-      pageCount: Math.ceil(data.totalCount / CustomerStore.getPageSize()),
-      loading: false,
-      customers: Immutable.fromJS(data.Customer),
-      invoices: Immutable.fromJS(data.Invoice),
-      next: next,
-      previous: data.startPosition === 1 ? null : ( data.startPosition - CustomerStore.getPageSize() >= 1 ? data.startPosition - CustomerStore.getPageSize() : 1)
-    }));
+    this.setState(state => {
+      const pageCount = (data.totalCount || data.totalCount === 0) ? Math.ceil(data.totalCount / CustomerStore.getPageSize()) : state.pageCount;
+      return {
+        currentPage: pageNumber,
+        pageCount: pageCount,
+        loading: false,
+        customers: state.customers.concat(Immutable.fromJS(data.Customer)),
+        invoices: state.invoices.merge(Immutable.fromJS(data.Invoice)),
+        next: pageNumber < pageCount - 1 ? pageNumber + 1 : null,
+        previous: pageNumber > 0 ? pageNumber - 1 : null//data.startPosition === 1 ? null : ( data.startPosition - CustomerStore.getPageSize() >= 1 ? data.startPosition - CustomerStore.getPageSize() : 1)
+      };
+    });
   }
 
   handleRemoveAlert(index) {
