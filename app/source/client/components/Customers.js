@@ -28,19 +28,17 @@ const Customers = React.createClass({
         return (
               <div className="row">
                 {loader}
-                <table className="ui table">
+                <table className="ui teal small very compact table">
                   <thead>
                     <tr>
-                     {['Address', 'Customer', 'Invoices', 'Open Balance', 'Id'].map((h, i) => {
+                     {['Address', 'Customer', 'Invoices', 'Open Balance', 'Id', 'Partial Payment'].map((h, i) => {
                        return <th key={i}>{h}</th>;
                      })}
                     </tr>
                   </thead>
-                  {/*<ReactCSSTransitionGroup component="tbody" transitionName="tenants">*/}
                   <tbody>
                     {custs}
                   </tbody>
-                  {/*</ReactCSSTransitionGroup>*/}
                 </table>
               </div>
         );

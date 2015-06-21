@@ -33,7 +33,7 @@ React.render(
       currentPage: store.getCurrentPage()
     })
   }} flux={flux}>
-    <App pageSize={CustomerStore.getPageSize()} />
+    <App loadLimit={CustomerStore.getLoadLimit()} pageSize={CustomerStore.getPageSize()} />
   </FluxComponent>,
   document.getElementById('content')
 );

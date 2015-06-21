@@ -30,11 +30,17 @@ class Customer extends React.Component {
     const customer = this.props.customer;
     console.log('render ...Customer -', customer.get('Id'));
     const cells = [
-      {content: customer.get('CompanyName')},
+      {content: <h5>{customer.get('CompanyName')}</h5>},
       {content: <p>{customer.get('DisplayName')}</p>},
       {content: <Invoices expanded={this.props.expanded} invoices={this.props.invoices} />},
-      {content: <button className={cx('large', 'ui', 'button', this.props.selected ? 'green' : 'basic')} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</button>},
-      {content: <h5>{customer.get('Id')}</h5>}
+      {content: <button className={cx('large', 'ui', this.props.selected ? 'green' : 'green basic', 'button')} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</button>},
+      {content: <h5>{customer.get('Id')}</h5>},
+      {content: <div className="ui vertical animated purple basic button">
+        <div className="hidden content">Edit</div>
+        <div className="visible content">
+          <i className="edit icon"></i>
+        </div>
+      </div>}
     ];
     return (
       <tr>

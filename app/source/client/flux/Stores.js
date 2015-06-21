@@ -36,6 +36,10 @@ class CustomerStore extends Store {
     return 5;
   }
 
+  static getLoadLimit() {
+    return 10;
+  }
+
   /**
    * Check if a page number is loaded in the store.
    * @param pageNumber {number} desired page number to load.
@@ -198,7 +202,7 @@ class CustomerStore extends Store {
 
 }
 
-let stores = {};
+const stores = {};
 
 stores.CustomerStore = CustomerStore;
 

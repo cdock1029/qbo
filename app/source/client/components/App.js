@@ -13,6 +13,7 @@ const App = React.createClass({
       alerts: React.PropTypes.array,
       currentPage: React.PropTypes.number,
       flux: React.PropTypes.object,
+      loadLimit: React.PropTypes.number,
       loading: React.PropTypes.bool,
       next: React.PropTypes.string,
       pageCount: React.PropTypes.number,
@@ -21,7 +22,7 @@ const App = React.createClass({
     },
 
     componentDidMount() {
-      this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: 10, offset: 1, count: true, fields: ['CompanyName', 'DisplayName', 'Balance']});
+      this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.loadLimit, offset: 1, count: true, fields: ['CompanyName', 'DisplayName', 'Balance']});
     },
 
     shouldComponentUpdate(nP, nS) {
@@ -30,8 +31,7 @@ const App = React.createClass({
           nP.next !== this.props.next ||
           nP.previous !== this.props.previous ||
           nP.pageCount !== this.props.pageCount ||
-          nP.currentPage !== this.props.currentPage ||
-          nP.pageSize !== this.props.pageSize;
+          nP.currentPage !== this.props.currentPage;
     },
 
     _dismissAlert(index, e) {
@@ -47,7 +47,7 @@ const App = React.createClass({
       } else {
         // load more data from server
         const offset = pageNumber * this.props.pageSize + 1;//0 indexed pageNumber
-        this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.pageSize, offset, count: false}, pageNumber);
+        this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: this.props.loadLimit, offset, count: false}, pageNumber);
       }
 
     },
