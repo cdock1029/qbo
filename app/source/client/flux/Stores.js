@@ -31,6 +31,10 @@ class CustomerStore extends Store {
     return 6;
   }
 
+  getPageCount() {
+    return this.state.pageCount;
+  }
+
   getCustomers() {
     //console.log('getCustomers');
     return this.state.customers;
@@ -152,6 +156,7 @@ class CustomerStore extends Store {
     }
     this.setState(state => ({
       totalCount: data.totalCount || data.totalCount === 0 ? data.totalCount : state.totalCount,
+      pageCount: Math.ceil(data.totalCount / CustomerStore.getPageSize()),
       loading: false,
       customers: Immutable.fromJS(data.Customer),
       invoices: Immutable.fromJS(data.Invoice),

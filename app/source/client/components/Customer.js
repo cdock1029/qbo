@@ -28,7 +28,7 @@ class Customer extends React.Component {
 
   render() {
     const customer = this.props.customer;
-    console.log('Customer render:', customer.get('Id'));
+    console.log('render ...Customer -', customer.get('Id'));
     const cells = [
       {content: customer.get('CompanyName')},
       {content: <p>{customer.get('DisplayName')}</p>},

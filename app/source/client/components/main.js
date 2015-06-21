@@ -29,6 +29,7 @@ React.render(
       loading: store.getLoading(),
       previous: store.getPrevious(),
       next: store.getNext(),
+      pageCount: store.getPageCount(),
       totalCount: store.getTotalCount()
     })
   }} flux={flux}>

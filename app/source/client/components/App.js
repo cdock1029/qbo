@@ -14,13 +14,27 @@ const App = React.createClass({
       flux: React.PropTypes.object,
       loading: React.PropTypes.bool,
       next: React.PropTypes.string,
+      pageCount: React.PropTypes.number,
       pageSize: React.PropTypes.number,
       previous: React.PropTypes.string,
       totalCount: React.PropTypes.number
     },
 
+    componentDidMount() {
+      this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: 50, offset: 1, count: true, fields: ['CompanyName', 'DisplayName', 'Balance']});
+    },
+
+    shouldComponentUpdate(nP, nS) {
+      return nP.alerts !== this.props.alerts ||
+          nP.loading !== this.props.loading ||
+          nP.next !== this.props.next ||
+          nP.previous !== this.props.previous ||
+          nP.pageCount !== this.props.pageCount ||
+          nP.pageSize !== this.props.pageSize ||
+          nP.totalCount !== this.props.totalCount;
+    },
+
     _dismissAlert(index, e) {
-      console.log('_dismissAlert: ' + index);
       this.props.flux.getActions('customers').removeAlert(index);
     },
 
@@ -30,22 +44,22 @@ const App = React.createClass({
     },
 
     render() {
-        const alerts = this.props.alerts.map((alert, index) => {
-          return (
-            <div className={classnames({ui: true, message: true}, alert.type)} key={index}>
-              <i className="close icon" onClick={this._dismissAlert.bind(null, index)}></i>
-              <div className="header">
-                {alert.message}
-              </div>
+      console.log('render APP');
+      const alerts = this.props.alerts.map((alert, index) => {
+        return (
+          <div className={classnames({ui: true, message: true}, alert.type)} key={index}>
+            <i className="close icon" onClick={this._dismissAlert.bind(null, index)}></i>
+            <div className="header">
+              {alert.message}
             </div>
-          );
-        }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
+          </div>
+        );
+      }).toJS();//TODO refactor when immutable object can be rendered correctly in Bootstrap
 
       let pages = null;
       const pageSize = this.props.pageSize;
-      if (this.props.totalCount) {
-        const numPages = Math.floor(this.props.totalCount / pageSize) + (this.props.totalCount % pageSize > 0 ? 1 : 0);
-        let pageElements = _(numPages).times(function(i) {
+      if (this.props.pageCount) {
+        let pageElements = _(this.props.pageCount).times(function(i) {
 
           let offset = i * pageSize + 1;
           let classes;
@@ -59,7 +73,7 @@ const App = React.createClass({
               item: true
             });
           } else if (this.props.previous) {
-            test = i === (numPages - 1);
+            test = i === (this.props.pageCount - 1);
             el = test ? React.DOM.div : React.DOM.a;
             classes = classnames({
               active: test,

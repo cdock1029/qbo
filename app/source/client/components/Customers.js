@@ -17,7 +17,7 @@ const Customers = React.createClass({
     },
 
     render() {
-        console.log('CustomerS RENDER');
+        console.log('render ..Customer(S)');
         const custs = this.props.customers.map((c, index) => {
             return <Customer customer={c} key={index} />;
         });//TODO refactor when immutable object can be rendered correctly in Bootstrap

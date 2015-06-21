@@ -3,7 +3,6 @@
 import React from 'react/addons';
 import FluxComponent from 'flummox/component';
 import Customers from './Customers';
-import { CustomerStore } from '../flux/Stores';
 
 const CustomersWrapper = React.createClass({
 
@@ -11,11 +10,8 @@ const CustomersWrapper = React.createClass({
     flux: React.PropTypes.object
   },
 
-  componentDidMount() {
-    this.props.flux.getActions('customers').getCustomers({asc: 'CompanyName', limit: CustomerStore.getPageSize(), offset: 1, count: true, fields: ['CompanyName', 'DisplayName', 'Balance']});
-  },
-
   render() {
+    console.log('render .CustomerWrapper');
     return (
       <FluxComponent connectToStores={{
         customers: store => ({
