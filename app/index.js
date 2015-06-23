@@ -1,6 +1,6 @@
 'use strict';
 
-require('core-js');
+//require('core-js');
 /*eslint-disable no-var */
 var server = require('server');
 /*eslint-enable no-var */

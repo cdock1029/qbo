@@ -31,7 +31,7 @@ const Customers = React.createClass({
                 <table className="ui teal small very compact table">
                   <thead>
                     <tr>
-                     {['Address', 'Customer', 'Invoices', 'Open Balance', 'Id', 'Partial Payment'].map((h, i) => {
+                     {['Id', 'Address', 'Customer', 'Invoices', 'Pay'].map((h, i) => {
                        return <th key={i}>{h}</th>;
                      })}
                     </tr>

@@ -12,10 +12,19 @@ class Customer extends React.Component {
     return nextProps.customer !== this.props.customer ||
       nextProps.expanded !== this.props.expanded ||
       nextProps.invoices !== this.props.invoices ||
-      nextProps.selected !== this.props.selected;
+      nextProps.selected !== this.props.selected ||
+
+      /* input state */
+      nextState.showInput !== this.state.showInput ||
+      nextState.inputValue !== this.state.inputValue;
   }
 
-  _handleChange(event) {
+  constructor(props) {
+    super(props);
+    this.state = {showInput: false, inputValue: 0};
+  }
+
+  _handleSelectFullBalance(event) {
     const update = this.context.flux.getActions('customers').updatePayments;
 
     if (this.props.selected) {
@@ -26,26 +35,44 @@ class Customer extends React.Component {
 
   }
 
+  _handleInputChange(e) {
+    this.setState({inputValue: e.target.value});
+  }
+
+  _handleHideInput(e) {
+    this.setState({inputValue: 0, showInput: false});
+  }
+
+  _handleShowInput(e) {
+    this.setState({showInput: true});
+  }
+
   render() {
     const customer = this.props.customer;
     console.log('render ...Customer -', customer.get('Id'));
+
+    const paymentCell = this.state.showInput ?
+      (<div className="ui big action input">
+        <input min="0" onChange={this._handleInputChange.bind(this)} placeholder="Enter amount" type="number" value={this.state.inputValue || null}/>
+        <button className="ui purple basic icon button" onClick={this._handleHideInput.bind(this)}>
+          <i className="remove icon"></i>
+        </button>
+      </div>) :
+      (<div className={cx(this.props.selected ? '' : 'ui buttons')}>
+        <button className={cx('large', 'ui', this.props.selected ? 'green' : 'left attached green basic', 'button')} onClick={this._handleSelectFullBalance.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</button>
+        {this.props.selected ? <noscript /> : <button className="large right attached ui purple basic icon button" onClick={this._handleShowInput.bind(this)}><i className="edit icon"/></button>}
+      </div>);
     const cells = [
+      {content: <h5>{customer.get('Id')}</h5>},
       {content: <h5>{customer.get('CompanyName')}</h5>},
       {content: <p>{customer.get('DisplayName')}</p>},
       {content: <Invoices expanded={this.props.expanded} invoices={this.props.invoices} />},
-      {content: <button className={cx('large', 'ui', this.props.selected ? 'green' : 'green basic', 'button')} onClick={this._handleChange.bind(this)}>{accounting.formatMoney(customer.get('Balance'))}</button>},
-      {content: <h5>{customer.get('Id')}</h5>},
-      {content: <div className="ui vertical animated purple basic button">
-        <div className="hidden content">Edit</div>
-        <div className="visible content">
-          <i className="edit icon"></i>
-        </div>
-      </div>}
+      {content: paymentCell}
     ];
     return (
       <tr>
         {cells.map( (c, index) => {
-          return <td key={index} onClick={c.onClick}>{c.content}</td>;
+          return <td key={index}>{c.content}</td>;
         })}
       </tr>
     );
